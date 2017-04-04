@@ -27,7 +27,7 @@ Uses test-fn to compare old with elements of lists to decide if this is a value 
                      ,@body)))))
     (%expand-mv-let* mv-let-list)))
 
-(defmacro format-concatenate (stream format-lists)
+(defmacro format-concatenate (stream &rest format-lists)
   "format-lists is a list of format lists in which first el is format-control
 and rest is format-arguments.
 example: (format-concatenate nil (\"~A ~A\" a b) (\"---\")"
