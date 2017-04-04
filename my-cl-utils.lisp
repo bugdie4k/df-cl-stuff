@@ -26,3 +26,10 @@ Uses test-fn to compare old with elements of lists to decide if this is a value 
                    `(multiple-value-bind ,(first mv-let1) ,(second mv-let1)
                      ,@body)))))
     (%expand-mv-let* mv-let-list)))
+
+(defmacro format-concatenate (&rest format-lists)
+  "format-lists is a list of format lists in which first el is format-control
+and rest is format-arguments.
+example: (format-concatenate (\"~A ~A\" a b) (\"---\")"
+  `(concatenate 'string
+                ,@(mapcar (lambda (format-list) `(format nil ,@format-list)) format-lists)))

@@ -2,4 +2,5 @@
   (:nicknames #:myclu)
   (:use #:cl #:alexandria)
   (:export #:replace-in-tree
-           #:mv-let*))
+           #:mv-let*
+           #:format-concatenate))
