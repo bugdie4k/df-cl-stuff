@@ -33,3 +33,41 @@ and rest is format-arguments.
 example: (format-concatenate nil (\"~A ~A\" a b) (\"---\")"
   `(format ,stream "~A" (concatenate 'string
                                      ,@(mapcar (lambda (format-list) `(format nil ,@format-list)) format-lists))))
+
+;; defmethods for aaaall objects
+
+(defgeneric traverse-slots (obj fn)
+  (:documentation "Use fn function on each slot. 'fn' must take two parameters: slot-name and slot-value."))
+
+(defmethod traverse-slots (obj fn)
+  (labels ((%traverse-slots (slots-lst)
+             (when slots-lst
+               (let* ((slot (car slots-lst))
+                      (def-name (sb-mop:slot-definition-name slot))
+                      (name (symbol-name def-name))
+                      (value (slot-value obj def-name)))
+                 (funcall fn name value)
+                 (%traverse-slots (cdr slots-lst))))))
+    (%traverse-slots (sb-mop:class-slots (class-of obj)))))
+
+(defgeneric has-such-slot? (obj name value test)
+  (:documentation "Checkes if object has a slot of a certain value"))
+
+(defmethod has-such-slot? (obj name value test)
+  (funcall test value (slot-value obj (intern (symbol-name name)))))
+
+(defgeneric has-such-slot?/with-wildcard-string (obj name value wildcard)
+  (:documentation "obj's slot by name 'name' is converted to string and compared to 'value'.
+'value' can have a wildcard 'wildcard'.
+If slot value is already a string it is not converted."))
+
+(defmethod has-such-slot?/with-wildcard-string (obj name value wildcard)
+  (let ((val (slot-value obj (intern (symbol-name name) (symbol-package (type-of obj))))))
+    (string-equal-with-wildcards :string-with-wildcards value :string (if (typep val 'string) val (write-to-string val)) :wildcard wildcard)))
+
+(defgeneric pretty-print-object (obj stream)
+  (:documentation "Pretty printer for objects. Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
+
+(defmethod pretty-print-object (obj stream)
+  (traverse-slots obj (lambda (name val) (format stream "~A: ~S~%" name val))))
+
