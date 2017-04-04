@@ -31,5 +31,5 @@ Uses test-fn to compare old with elements of lists to decide if this is a value 
   "format-lists is a list of format lists in which first el is format-control
 and rest is format-arguments.
 example: (format-concatenate nil (\"~A ~A\" a b) (\"---\")"
-  `(format ,stream (concatenate 'string
-                                ,@(mapcar (lambda (format-list) `(format nil ,@format-list)) format-lists))))
+  `(format ,stream "~A" (concatenate 'string
+                                     ,@(mapcar (lambda (format-list) `(format nil ,@format-list)) format-lists))))
