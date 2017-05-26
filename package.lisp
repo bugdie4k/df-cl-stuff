@@ -15,4 +15,5 @@
            #:dbp
            #:dbpe
            #:dbp-reset
+           #:dbps
            ))

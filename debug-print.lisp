@@ -14,5 +14,9 @@
   "simple"
   (dbpe :stream t :increase-count? t :output-list output-list))
 
+(defun dbps (&rest output-list-list)
+  "several"
+  (dbp (apply #'append output-list-list)))
+
 (defun dbp-reset ()
   (setf *dbp-count* 0))
