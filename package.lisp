@@ -1,10 +1,17 @@
 (defpackage #:df-cl-utils
   (:nicknames #:dfclu #:df)
   (:use #:cl)
-  (:export #:replace-in-tree
+  (:export #:skip-el
+           #:string-equal-with-wildcards
+           #:copy-instance
+           #:replace-in-tree
            #:mv-let*
            #:format-concatenate
            #:traverse-slots
            #:has-such-slot?
            #:has-such-slot?/with-wildcard-string
-           #:pretty-print-object))
+           #:pretty-print-object
+           ;; debug print
+           #:dbp
+           #:dbp-reset
+           ))
