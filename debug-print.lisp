@@ -2,11 +2,17 @@
 
 (defvar *dbp-count* 0)
 
-(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (trailing-newline? t) (delimiter " ") (add-prefixes? t) output-list)
+(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-prefix 17) (trailing-newline? t) (delimiter " ") (add-prefixes? t) (use-first-as-prefix-part? t) output-list)
   "extended"
-  (let* ((prefix (format nil
-                         (format nil "~~~AA " place-for-count)
-                         (format nil "~A>" *dbp-count*))))
+  (let* ((prefix-count (format nil
+                               (format nil "~~~AA " place-for-count)
+                               (format nil "~A>" *dbp-count*)))
+         (prefix (if use-first-as-prefix-part?
+                     (format nil
+                             (format nil "~~~AA " place-for-prefix)
+                             (format nil "~A ~A" prefix-count (car output-list)))
+                     prefix-count))
+         (output-list (if use-first-as-prefix-part? (cdr output-list) output-list)))
     (labels ((%apply-autistic-formatting (list)
                (mapcar (lambda (el) (if (eq el :nl) (format nil "~%") (format nil "~A~A" el delimiter))) list))
              (%intercept-newlines-with-prefix (string)
@@ -22,7 +28,7 @@
 
 (defun dbp (&rest output-list)
   "simple"
-  (dbpe :stream t :increase-count? t :place-for-count 4 :trailing-newline? t :delimiter " " :add-prefixes? t :output-list output-list))
+  (dbpe :stream t :increase-count? t :place-for-count 4 :place-for-prefix 17 :trailing-newline? t :delimiter " " :add-prefixes? t :use-first-as-prefix-part? t :output-list output-list))
 
 (defmacro dbps (&rest output-list-list)
   "several with implicit :nl"
