@@ -13,5 +13,6 @@
            #:pretty-print-object
            ;; debug print
            #:dbp
+           #:dbpe
            #:dbp-reset
            ))
