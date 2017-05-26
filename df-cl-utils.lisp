@@ -1,4 +1,4 @@
-(in-package #:my-cl-utils)
+(in-package #:df-cl-utils)
 
 (defun replace-in-tree (lst &key (old (error "Supply OLD argument to REPLACE-IN-TREE function"))
                                  (new (error "Supply NEW argument to REPLACE-IN-TREE function"))

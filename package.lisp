@@ -1,5 +1,5 @@
-(defpackage #:my-cl-utils
-  (:nicknames #:myclu)
+(defpackage #:df-cl-utils
+  (:nicknames #:dfclu #:df)
   (:use #:cl)
   (:export #:replace-in-tree
            #:mv-let*
