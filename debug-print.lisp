@@ -2,7 +2,7 @@
 
 (defvar *dbp-count* 0)
 
-(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 14 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
+(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 30 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
                                     :line-delimiter-char #\- :line-delimiter-length 40 :line-delimiter-width 1
                                     :mark-sections? t))
 
@@ -22,13 +22,17 @@
          (output-list (if use-first-as-prefix-part? (cdr output-list) output-list))
          (marker-count 1))
     (labels ((%apply-autistic-formatting (list)
-               (loop for (el el2) on list
-                     collecting (cond ((eq el :nl) (format nil "~%"))
-                                      ((eq el :delim) (format nil "~%~{~A~^~%~}~:[~;~%~]"
-                                                              (loop for i from 1 to line-delimiter-width
-                                                                    collect (make-string line-delimiter-length :initial-element line-delimiter-char))
-                                                              el2))
-                                      (t (format nil "~A~A" el words-delimiter)))))
+               (let (prev)
+                 (loop for (el el2) on list
+                       for i from 0
+                       collecting (cond ((eq el :nl) (format nil "~%"))
+                                        ((eq el :delim) (format nil "~:[~%~;~]~{~A~^~%~}~:[~;~%~]"
+                                                                (or (zerop i) (eq prev :delim))
+                                                                (loop for i from 1 to line-delimiter-width
+                                                                      collect (make-string line-delimiter-length :initial-element line-delimiter-char))
+                                                                el2))
+                                        (t (format nil "~A~A" el words-delimiter)))
+                       do (setf prev el))))
              (%intercept-newlines-with-prefix (string)
                (let ((newlines (loop for c across string counting (eq c #\newline))))
                  (coerce
