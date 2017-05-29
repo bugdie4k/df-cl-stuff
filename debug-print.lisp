@@ -2,15 +2,18 @@
 
 (defvar *dbp-count* 0)
 
-(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-prefix 17) (trailing-newline? t) (delimiter " ") (add-prefixes? t) (use-first-as-prefix-part? t) (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
+(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :delimiter " " :add-prefixes? t :use-first-as-prefix-part? t))
+
+(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-first-in-prefix 16) (trailing-newline? t)
+               (delimiter " ") (add-prefixes? t) (use-first-as-prefix-part? t) (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
   "extended"
   (let* ((prefix-count (format nil
                                (format nil "~~~AA " place-for-count)
                                (format nil "~A>" *dbp-count*)))
          (prefix (if use-first-as-prefix-part?
                      (format nil
-                             (format nil "~~~AA " place-for-prefix)
-                             (format nil "~A ~A" prefix-count (car output-list)))
+                             (format nil "~A ~~~AA " prefix-count place-for-first-in-prefix)
+                             (format nil "~A" (car output-list)))
                      prefix-count))
          (output-list (if use-first-as-prefix-part? (cdr output-list) output-list)))
     (labels ((%apply-autistic-formatting (list)
@@ -28,13 +31,15 @@
 
 (defun dbp (&rest output-list)
   "simple"
-  (dbpe :stream t :increase-count? t :place-for-count 4 :place-for-prefix 20 :trailing-newline? t :delimiter " " :add-prefixes? t :use-first-as-prefix-part? t :output-list output-list))
+  (apply #'dbpe :output-list output-list *dbp-standard-args*))
 
 (defmacro dbps (&rest output-list-list)
   "several with implicit :nl"
   `(progn 
-     ,@(mapcar (lambda (output-list) `(dbpe :increase-count? nil :output-list ',output-list)) (butlast output-list-list))
-     (dbpe :increase-count? t :output-list ',(car (last output-list-list)))))
+     ,@(mapcar (lambda (output-list)
+                 `(apply #'dbpe stream t :increase-count? nil :output-list ',output-list ,(cddr *dbp-standard-args*)))
+               (butlast output-list-list))
+     (apply #'dbpe :output-list ',(car (last output-list-list)) ,*dbp-standard-args*)))
 
 (defun dbp-reset ()
   (setf *dbp-count* 0))
