@@ -37,8 +37,8 @@
                                       (let ((prefix-chars (coerce prefix 'list)))
                                         (cons #\newline (if mark-sections?
                                                             (append (if (= marker-count newlines)
-                                                                        (list #\* #\- #\> #\space)
-                                                                        (progn (incf marker-count) (list #\* #\space #\space #\space)))
+                                                                        (coerce "*** " 'list)
+                                                                        (progn (incf marker-count) (coerce "*   " 'list)))
                                                                   prefix-chars)
                                                             prefix-chars)))
                                       (list c)))
