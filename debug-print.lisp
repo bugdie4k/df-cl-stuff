@@ -2,7 +2,7 @@
 
 (defvar *dbp-count* 0)
 
-(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-prefix 17) (trailing-newline? t) (delimiter " ") (add-prefixes? t) (use-first-as-prefix-part? t) output-list)
+(defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-prefix 17) (trailing-newline? t) (delimiter " ") (add-prefixes? t) (use-first-as-prefix-part? t) (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
   "extended"
   (let* ((prefix-count (format nil
                                (format nil "~~~AA " place-for-count)
@@ -28,7 +28,7 @@
 
 (defun dbp (&rest output-list)
   "simple"
-  (dbpe :stream t :increase-count? t :place-for-count 4 :place-for-prefix 17 :trailing-newline? t :delimiter " " :add-prefixes? t :use-first-as-prefix-part? t :output-list output-list))
+  (dbpe :stream t :increase-count? t :place-for-count 4 :place-for-prefix 20 :trailing-newline? t :delimiter " " :add-prefixes? t :use-first-as-prefix-part? t :output-list output-list))
 
 (defmacro dbps (&rest output-list-list)
   "several with implicit :nl"
