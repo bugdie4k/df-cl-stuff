@@ -53,11 +53,13 @@
 
 (defmacro dbps (&rest output-list-list)
   "Several with implicit :nl"
-  `(progn 
-     ,@(mapcar (lambda (output-list)
-                 `(apply #'dbpe stream t :increase-count? nil :output-list ',output-list ,(cddr *dbp-standard-args*)))
-               (butlast output-list-list))
-     (apply #'dbpe :output-list ',(car (last output-list-list)) ,*dbp-standard-args*)))
+  (let ((1st (car output-list-list))
+        (output-list-list (cdr output-list-list)))
+    `(progn 
+       ,@(mapcar (lambda (output-list)
+                   `(apply #'dbpe :output-list ',(cons 1st output-list) :mark-sections? nil :increase-count? nil',*dbp-standard-args*))
+                 (butlast output-list-list))
+       (apply #'dbpe :output-list ',(cons 1st (car (last output-list-list))) :mark-sections? nil ',*dbp-standard-args*))))
 
 (defun dbp-reset ()
   (setf *dbp-count* 0))
