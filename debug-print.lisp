@@ -2,7 +2,7 @@
 
 (defvar *dbp-count* 0)
 
-(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 30 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
+(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
                                     :line-delimiter-char #\- :line-delimiter-length 40 :line-delimiter-width 1
                                     :mark-sections? t))
 

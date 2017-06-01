@@ -4,4 +4,5 @@
   :author "Danylo Fedorov <fedorough@gmail.com>"
   :serial t
   :components ((:file "package")
-               (:file "df-cl-utils")))
+               (:file "df-cl-utils")
+               (:file "debug-print")))
