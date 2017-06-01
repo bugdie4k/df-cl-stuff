@@ -3,11 +3,13 @@
 (defvar *dbp-count* 0)
 
 (defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
-                                    :line-delimiter-char #\- :line-delimiter-length 40 :line-delimiter-width 1
+                                    :line-delimiter-char1 #\- :line-delimiter-char2 #\= :line-delimiter-char3 #\* :line-delimiter-char4 #\# :line-delimiter-char5 #\~
+                                    :line-delimiter-length 40 :line-delimiter-width 1
                                     :mark-sections? t))
 
 (defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-first-in-prefix 16) (trailing-newline? t)
-               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t) (line-delimiter-char #\-) (line-delimiter-length 20) (line-delimiter-width 1)
+               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t) (line-delimiter-char1 #\-) (line-delimiter-char2 #\=) (line-delimiter-char3 #\*) (line-delimiter-char4 #\#) (line-delimiter-char5 #\~)
+               (line-delimiter-length 20) (line-delimiter-width 1)
                (mark-sections? t)
                (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
   "Extended. Use :nl and :delim args to make newline and delimit sections."
@@ -21,17 +23,31 @@
                      prefix-count))
          (output-list (if use-first-as-prefix-part? (cdr output-list) output-list))
          (marker-count 1))
-    (labels ((%apply-autistic-formatting (list)
+    (labels ((%sym-delim? (sym)
+               (when (symbolp sym)
+                 (let ((sym-name (symbol-name sym)))
+                   (when (= (length sym-name) 6)
+                       (let ((sym-name-0to5 (subseq sym-name 0 5))
+                             (sym-name-5toend (subseq sym-name 5)))
+                         (when (string= sym-name-0to5 "DELIM")
+                           (find (parse-integer sym-name-5toend :junk-allowed t) '(1 2 3 4 5))))))))
+             (%apply-autistic-formatting (list)
                (let (prev)
                  (loop for (el el2) on list
                        for i from 0
-                       collecting (cond ((eq el :nl) (format nil "~%"))
-                                        ((eq el :delim) (format nil "~:[~%~;~]~{~A~^~%~}~:[~;~%~]"
-                                                                (or (zerop i) (eq prev :delim))
-                                                                (loop for i from 1 to line-delimiter-width
-                                                                      collect (make-string line-delimiter-length :initial-element line-delimiter-char))
-                                                                el2))
-                                        (t (format nil "~A~A" el words-delimiter)))
+                       collecting (let ((delim? (%sym-delim? el)))
+                                    (cond ((eq el :nl) (format nil "~%"))
+                                          (delim? (format nil "~:[~%~;~]~{~A~^~%~}~:[~;~%~]"
+                                                          (or (zerop i) (%sym-delim? prev))
+                                                          (loop for i from 1 to line-delimiter-width                                                                 
+                                                                collect (make-string line-delimiter-length :initial-element (ecase delim?
+                                                                                                                              (1 line-delimiter-char1)
+                                                                                                                              (2 line-delimiter-char2)
+                                                                                                                              (3 line-delimiter-char3)
+                                                                                                                              (4 line-delimiter-char4)
+                                                                                                                              (5 line-delimiter-char5))))
+                                                          el2))
+                                          (t (format nil "~A~A" el words-delimiter))))
                        do (setf prev el))))
              (%intercept-newlines-with-prefix (string)
                (let ((newlines (loop for c across string counting (eq c #\newline))))
@@ -43,7 +59,7 @@
                                                             (append (if (= marker-count newlines)
                                                                         (coerce "*** " 'list)
                                                                         (progn (incf marker-count) (coerce "*   " 'list)))
-                                                                  prefix-chars)
+                                                                    prefix-chars)
                                                             prefix-chars)))
                                       (list c)))
                   'string))))
