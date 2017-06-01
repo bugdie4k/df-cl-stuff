@@ -3,12 +3,13 @@
 (defvar *dbp-count* 0)
 
 (defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
-                                    :line-delimiter-char1 #\- :line-delimiter-char2 #\= :line-delimiter-char3 #\* :line-delimiter-char4 #\# :line-delimiter-char5 #\~
+                                    :line-delimiter-char #\-  :line-delimiter-char1 #\= :line-delimiter-char2 #\* :line-delimiter-char3 #\# :line-delimiter-char4 #\~ :line-delimiter-char5 #\> :line-delimiter-char6 #\<
                                     :line-delimiter-length 40 :line-delimiter-width 1
                                     :mark-sections? t))
 
 (defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-first-in-prefix 16) (trailing-newline? t)
-               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t) (line-delimiter-char1 #\-) (line-delimiter-char2 #\=) (line-delimiter-char3 #\*) (line-delimiter-char4 #\#) (line-delimiter-char5 #\~)
+               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t) (line-delimiter-char #\-) (line-delimiter-char1 #\=) (line-delimiter-char2 #\*) (line-delimiter-char3 #\#) (line-delimiter-char4 #\~)
+               (line-delimiter-char5 #\>) (line-delimiter-char6 #\<)
                (line-delimiter-length 20) (line-delimiter-width 1)
                (mark-sections? t)
                (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
@@ -26,11 +27,13 @@
     (labels ((%sym-delim? (sym)
                (when (symbolp sym)
                  (let ((sym-name (symbol-name sym)))
-                   (when (= (length sym-name) 6)
-                       (let ((sym-name-0to5 (subseq sym-name 0 5))
+                   (cond
+                     ((= (length sym-name) 6)
+                      (let ((sym-name-0to5 (subseq sym-name 0 5))
                              (sym-name-5toend (subseq sym-name 5)))
                          (when (string= sym-name-0to5 "DELIM")
-                           (find (parse-integer sym-name-5toend :junk-allowed t) '(1 2 3 4 5))))))))
+                           (find (parse-integer sym-name-5toend :junk-allowed t) '(1 2 3 4 5 6)))))
+                     ((and (= (length sym-name) 5) (string= sym-name "DELIM")) 0)))))
              (%apply-autistic-formatting (list)
                (let (prev)
                  (loop for (el el2) on list
@@ -41,11 +44,13 @@
                                                           (or (zerop i) (%sym-delim? prev))
                                                           (loop for i from 1 to line-delimiter-width                                                                 
                                                                 collect (make-string line-delimiter-length :initial-element (ecase delim?
+                                                                                                                              (0 line-delimiter-char)
                                                                                                                               (1 line-delimiter-char1)
                                                                                                                               (2 line-delimiter-char2)
                                                                                                                               (3 line-delimiter-char3)
                                                                                                                               (4 line-delimiter-char4)
-                                                                                                                              (5 line-delimiter-char5))))
+                                                                                                                              (5 line-delimiter-char5)
+                                                                                                                              (6 line-delimiter-char6))))
                                                           el2))
                                           (t (format nil "~A~A" el words-delimiter))))
                        do (setf prev el))))
