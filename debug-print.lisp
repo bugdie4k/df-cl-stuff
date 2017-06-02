@@ -78,5 +78,19 @@
 (defun dbp-reset ()
   (setf *dbp-count* 0))
 
+;;; 
+
 (defun make-up (thing)
   (write-to-string (read-from-string (write-to-string thing))))
+
+(defun remove-duplicate/trim-spaces/newlines (string)
+  (let ((spaces? nil)
+        (newlines? nil))
+    (string-trim (format nil " ~%")
+                 (coerce (loop for c across string
+                               unless (or (and spaces? (char= c #\space))
+                                          (and newlines? (char= c #\newline)))
+                                 collect c 
+                               do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
+                               (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
+                         'string))))
