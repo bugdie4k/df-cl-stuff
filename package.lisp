@@ -16,4 +16,5 @@
            #:dbpe
            #:dbp-reset
            #:dbps
+           #:make-up
            ))
