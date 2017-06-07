@@ -51,14 +51,14 @@
                                       (let ((prefix-chars (coerce prefix 'list)))
                                         (cons #\newline (if mark-sections?
                                                             (append (if (= marker-count newlines)
-                                                                        (coerce "└── " 'list)
-                                                                        (progn (incf marker-count) (coerce "│   " 'list)))
+                                                                        (coerce "└ " 'list)
+                                                                        (progn (incf marker-count) (coerce "│ " 'list)))
                                                                     prefix-chars)
                                                             prefix-chars)))
                                       (list c)))
                   'string))))
       (let ((str (format nil "~@[~{~A~}~]" (%apply-autistic-formatting output-list))))
-        (format stream "~A~:[~;~%~]" (format nil "~:[~;┌─> ~]~A~A" mark-sections? prefix (if add-prefixes? (%intercept-newlines-with-prefix str) str)) trailing-newline?)
+        (format stream "~A~:[~;~%~]" (format nil "~:[~;┌ ~]~A~A" mark-sections? prefix (if add-prefixes? (%intercept-newlines-with-prefix str) str)) trailing-newline?)
         (when increase-count? (incf *dbp-count*))))))
 
 (defun dbp (&rest output-list)
