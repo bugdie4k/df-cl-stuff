@@ -94,3 +94,6 @@
                                do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
                                (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
                          'string))))
+
+(defun to-printable-string (arg)
+  (clean-string (write-to-string arg)))

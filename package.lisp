@@ -17,4 +17,5 @@
            #:dbp-reset
            #:dbps
            #:make-up
-           #:clean-string))
+           #:clean-string
+           #:to-printable-string))
