@@ -83,7 +83,7 @@
 (defun make-up (thing)
   (write-to-string (read-from-string (write-to-string thing))))
 
-(defun remove-duplicate/trim-spaces/newlines (string)
+(defun clean-string (string)
   (let ((spaces? nil)
         (newlines? nil))
     (string-trim (format nil " ~%")

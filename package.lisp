@@ -17,4 +17,4 @@
            #:dbp-reset
            #:dbps
            #:make-up
-           #:remove-duplicate/trim-spaces/newlines))
+           #:clean-string))
