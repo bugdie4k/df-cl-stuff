@@ -124,5 +124,6 @@ If slot value is already a string it is not converted."))
   (:documentation "Pretty printer for objects. Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
 
 (defmethod pretty-print-object (obj stream)
-  (traverse-slots obj (lambda (name val) (format stream "~A: ~S~%" name val))))
+  (format stream (with-output-to-string (s)
+     (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
 

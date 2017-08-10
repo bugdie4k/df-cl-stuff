@@ -2,12 +2,8 @@
 
 (defvar *dbp-count* 0)
 
-(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
-                                    :line-delimiter-length 60 :line-delimiter-width 1
-                                    :mark-sections? t))
-
 (defun dbpe (&key (stream t) (increase-count? t) (place-for-count 4) (place-for-first-in-prefix 16) (trailing-newline? t)
-               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t)  
+               (words-delimiter #\space) (add-prefixes? t) (use-first-as-prefix-part? t)
                (line-delimiter-length 60) (line-delimiter-width 1)
                (mark-sections? t)
                (output-list (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")))
@@ -38,7 +34,7 @@
                                     (cond ((eq el :nl) (format nil "~%"))
                                           (delim? (format nil "~:[~%~;~]~{~A~^~%~}~:[~;~%~]"
                                                           (or (zerop i) (%sym-delim? prev))
-                                                          (loop for i from 1 to line-delimiter-width                                                                 
+                                                          (loop for i from 1 to line-delimiter-width
                                                                 collect (make-string line-delimiter-length :initial-element delim?))
                                                           el2))
                                           (t (format nil "~A~A" el words-delimiter))))
@@ -61,6 +57,10 @@
         (format stream "~A~:[~;~%~]" (format nil "~:[~;┌ ~]~A~A" mark-sections? prefix (if add-prefixes? (%intercept-newlines-with-prefix str) str)) trailing-newline?)
         (when increase-count? (incf *dbp-count*))))))
 
+(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
+                                    :line-delimiter-length 60 :line-delimiter-width 1
+                                    :mark-sections? t))
+
 (defun dbp (&rest output-list)
   "Simple"
   (apply #'dbpe :output-list output-list *dbp-standard-args*))
@@ -69,7 +69,7 @@
   "Several with implicit :nl"
   (let ((1st (car output-list-list))
         (output-list-list (cdr output-list-list)))
-    `(progn 
+    `(progn
        ,@(mapcar (lambda (output-list)
                    `(apply #'dbpe :output-list ',(cons 1st output-list) :mark-sections? nil :increase-count? nil',*dbp-standard-args*))
                  (butlast output-list-list))
@@ -78,10 +78,7 @@
 (defun dbp-reset ()
   (setf *dbp-count* 0))
 
-;;; 
-
-(defun make-up (thing)
-  (write-to-string (read-from-string (write-to-string thing))))
+;;;
 
 (defun clean-string (string)
   (let ((spaces? nil)
@@ -90,10 +87,23 @@
                  (coerce (loop for c across string
                                unless (or (and spaces? (char= c #\space))
                                           (and newlines? (char= c #\newline)))
-                                 collect c 
+                                 collect c
                                do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
                                (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
                          'string))))
 
 (defun to-printable-string (arg)
   (clean-string (write-to-string arg)))
+
+;; (defun mkup (thing))
+
+(defun make-up (thing)
+  (labels ((%sharp-replace (str)
+             (coerce (loop for c across str
+                           collect
+                           (cond ((char= c #\#) #\space)
+                                 ((or (char= c #\<)
+                                      (char= c #\>)) #\space)
+                                 (t c)))
+                     'string)))
+    (write-to-string (read-from-string (%sharp-replace (to-printable-string thing))))))
