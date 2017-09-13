@@ -10,32 +10,64 @@
                                    :initform (second slot-def))))
                 direct-slots))))
 
+(defun mappend (function &rest lists)
+  "Applies FUNCTION to respective element(s) of each LIST, appending all the
+all the result list to a single list. FUNCTION must return a list."
+  (loop for results in (apply #'mapcar function lists)
+        append results))
+
 ;; format
 
 (defclass* fmt-size-mixin ()
   (size 1))
 
 (defclass* fmt-clip (fmt-size-mixin)
+  (size 1)
   (up "┌")
   (down "└")
   (horizontal "─")
-  (vertical "│"))
+  (vertical "│")
+  (side :left))
 
 (defclass* fmt-braces-mixin ()
   (brace-left "")
   (brace-right ""))
 
 (defclass* fmt-counter (fmt-size-mixin fmt-braces-mixin)
+  (size 4)
   (brace-right ">"))
 
-(defclass* fmt-prefix (fmt-size-mixin fmt-braces-mixin))
+(defclass* fmt-prefix (fmt-size-mixin fmt-braces-mixin)
+  (size 16))
 
-(defclass* fmt-msg (fmt-size-mixin))
+(defclass* fmt-msg (fmt-size-mixin fmt-braces-mixin)
+  (size 60))
 
 (defclass* fmt ()
-  (clip (make-instance 'fmt-clip :size 1))
-  (counter (make-instance 'fmt-counter :size 4))
-  (prefix (make-instance 'fmt-prefix :size 16))
-  (msg (make-instance 'fmt-msg :size 60)))
+  (clip (make-instance 'fmt-clip))
+  (counter (make-instance 'fmt-counter))
+  (prefix (make-instance 'fmt-prefix))
+  (msg (make-instance 'fmt-msg))
+  (order '(:clip :counter :prefix :msg)))
+
+
+;; EXAMPLE:
+
+;; (build-fmt
+;;  (:clip :size 1 :up "┌" :down "└" :vertical "│" :horizontal "─" :side :left)
+;;  (:counter :size 4 :brace-left "" :brace-right ">")
+;;  (:prefix :size 16 :brace-left "" :brace-right "")
+;;  (:msg :size 60 :brace-left "" :brace-right "")
+;;  (:order :clip :counter :prefix :msg))
+(defmacro build-fmt (&rest clauses)
+  (labels ((%parse-clauses (clauses)
+             (mappend (lambda (clause)
+                       (let ((type (first clause))
+                             (initargs (rest clause)))
+                         (if (eq type :order)
+                             `(:order ',initargs)
+                             (list type `(make-instance ',(intern (format nil "FMT-~A" (symbol-name type)) :df-cl-utils) ,@initargs)))))
+                     clauses)))
+    `(make-instance 'fmt ,@(%parse-clauses clauses))))
 
 ;;
