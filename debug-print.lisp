@@ -57,7 +57,9 @@
         (format stream "~A~:[~;~%~]" (format nil "~:[~;┌ ~]~A~A" mark-sections? prefix (if add-prefixes? (%intercept-newlines-with-prefix str) str)) trailing-newline?)
         (when increase-count? (incf *dbp-count*))))))
 
-(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4 :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space :add-prefixes? t :use-first-as-prefix-part? t
+(defparameter *dbp-standard-args* '(:increase-count? t :stream t :place-for-count 4
+                                    :place-for-first-in-prefix 16 :trailing-newline? t :words-delimiter #\space
+                                    :add-prefixes? t :use-first-as-prefix-part? t
                                     :line-delimiter-length 60 :line-delimiter-width 1
                                     :mark-sections? t))
 
