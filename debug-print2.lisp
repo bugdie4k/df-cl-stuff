@@ -50,7 +50,6 @@ all the result list to a single list. FUNCTION must return a list."
   (msg (make-instance 'fmt-msg))
   (order '(:clip :counter :prefix :msg)))
 
-
 ;; EXAMPLE:
 
 ;; (build-fmt
@@ -60,7 +59,7 @@ all the result list to a single list. FUNCTION must return a list."
 ;;  (:msg :size 60 :brace-left "" :brace-right "")
 ;;  (:order :clip :counter :prefix :msg))
 (defmacro build-fmt (&rest clauses)
-  (labels ((%parse-clauses (clauses)
+  (labels ((%parse-fmt-clauses (clauses)
              (mappend (lambda (clause)
                        (let ((type (first clause))
                              (initargs (rest clause)))
@@ -68,6 +67,15 @@ all the result list to a single list. FUNCTION must return a list."
                              `(:order ',initargs)
                              (list type `(make-instance ',(intern (format nil "FMT-~A" (symbol-name type)) :df-cl-utils) ,@initargs)))))
                      clauses)))
-    `(make-instance 'fmt ,@(%parse-clauses clauses))))
+    `(make-instance 'fmt ,@(%parse-fmt-clauses clauses))))
 
-;;
+;; options
+
+(defmacro build-options (&rest clauses)
+  ())
+
+(defun dbp-extended (&key (msg (error "DBPE NEEDS OUTPUT-LIST ARGUMENT")) (fmt nil) (options nil))
+  )
+
+(defmacro dbp ())
+
