@@ -162,9 +162,15 @@ all the result list to a single list. FUNCTION must return a list."
         (:middle (%build-mid vertical))
         (:lower (%build-corner down))))))
 
+(defmethod prepare-clips ((clip fmt-clip))
+  (list (prepare-clip clip :upper)
+        (prepare-clip clip :oneline)
+        (prepare-clip clip :middle)
+        (prepare-clip clip :lower)))
+
 (defmethod prepare-counter ((counter fmt-counter))
   (with-slots (size brace-left brace-right) counter
-    (format* (apply-braces counter *dbp-counter*) size)))
+     (format* (apply-braces counter *dbp-counter*) size)))
 
 (defmethod prepare-prefix ((prefix fmt-prefix) str)
   (with-slots (size brace-left brace-right) prefix
@@ -182,7 +188,13 @@ all the result list to a single list. FUNCTION must return a list."
           (id->form (make-hash-table))
           (context :msg)
           (fmt-init-list nil)
-          (opts-init-list nil))
+          (opts-init-list nil)
+          ;; syntax settings
+          (prefix-command ">p")
+          (message-command ">msg")
+          (format-command ">fmt")
+          (options-command ">opts")
+          (literally-command ">l"))
       (labels ((%context-dep-push (el)
                  (case context
                    (:msg (push el msg-list))
@@ -200,11 +212,11 @@ all the result list to a single list. FUNCTION must return a list."
                (%opts () (setf opts-init-list (pop clauses)))
                (%sym (sym)
                  (let ((name (symbol-name sym)))
-                   (cond ((string-equal name "p") (setf context :p))
-                         ((string-equal name "msg") (setf context :msg))
-                         ((string-equal name "fmt") (%fmt))
-                         ((string-equal name "opts") (%opts))
-                         ((string-equal name "l") (%lit))
+                   (cond ((string-equal name prefix-command) (setf context :p))
+                         ((string-equal name message-command) (setf context :msg))
+                         ((string-equal name format-command) (%fmt))
+                         ((string-equal name options-command) (%opts))
+                         ((string-equal name literally-command) (%lit))
                          ((form-gensym-name? name) (%context-dep-push "_FORM_GENSYM_"))
                          (t (%context-dep-push sym)))))
                (%parse ()
@@ -234,7 +246,6 @@ all the result list to a single list. FUNCTION must return a list."
 (defmacro dbp2 (&body clauses)
   (multiple-value-bind (prefix-list msg-list id->form frmt opts)
       (parse-dbp-clauses clauses)
-    (declare (ignore frmt))
     (let ((prefix-format-str (make-string-output-stream))
           (prefix-format-args nil)
           (msg-format-str (make-string-output-stream))
@@ -256,13 +267,19 @@ all the result list to a single list. FUNCTION must return a list."
                (%get-prefix-format-call ()
                  (setf context :p)
                  (dolist (i prefix-list) (%process-element i))
-                 `(format ,(out opts) ,(get-output-stream-string prefix-format-str) ,@prefix-format-args))
+                 `(format nil ,(get-output-stream-string prefix-format-str) ,@prefix-format-args))
                (%get-msg-format-call ()
                  (setf context :msg)
                  (dolist (i msg-list) (%process-element i))
-                 `(format ,(out opts) ,(get-output-stream-string msg-format-str) ,@msg-format-args)))
-        `(progn ,(%get-prefix-format-call)
-                ,(%get-msg-format-call))))))
+                 `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))
+        `(print-message ,frmt ,opts
+                        ',(prepare-clips (clip frmt))
+                        ,(%get-prefix-format-call)
+                        ,(%get-msg-format-call))))))
+
+(defmethod print-message ((frmt fmt) (opts options) clips prefix-str msg-str)
+  (with-slots (clip) frmt
+        ))
 
 ;; (defmethod print-message ((frmt fmt) (opts options) msg-lst)
 ;;   (with-slots (frmt-clip frmt-counter frmt-prefix frmt-msg frmt-order) frmt
