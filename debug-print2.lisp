@@ -85,17 +85,18 @@ all the result list to a single list. FUNCTION must return a list."
     (format nil format-string brace-left str brace-right)))
 
 (defclass* fmt-clip (fmt-size-mixin)
-  (size 1)
+  (size 2)
   (up "┌")
   (down "└")
-  (horizontal "─")
+  ;; (horizontal "─")
+  (horizontal " ")
   (vertical "│")
   (oneline "-")
   (side :left))
 
 (defclass* fmt-counter (fmt-size-mixin fmt-braces-mixin)
   (size 4)
-  (brace-right ">"))
+  (brace-right "> "))
 
 (defclass* fmt-prefix (fmt-size-mixin fmt-braces-mixin)
   (size 16))
@@ -110,36 +111,41 @@ all the result list to a single list. FUNCTION must return a list."
   (msg (make-instance 'fmt-msg)))
 
 ;; (build-fmt
+;; '(
 ;;  (:clip :size 1 :up "┌" :down "└" :vertical "│" :horizontal "─" :side :left)
 ;;  (:counter :size 4 :brace-left "" :brace-right ">")
 ;;  (:prefix :size 16 :brace-left "" :brace-right "")
-;;  (:msg :size 60 :brace-left "" :brace-right ""))
-(defun build-fmt (&rest clauses)
+;;  (:msg :size 60 :brace-left "" :brace-right "")
+;;  ))
+(defun build-fmt (clauses)
   (labels ((%parse-fmt-clauses (clauses)
              (mappend (lambda (clause)
                        (let ((type (first clause))
                              (initargs (rest clause)))
-                         (list type `(make-instance ',(intern (format nil "FMT-~A" (symbol-name type)) :df-cl-utils) ,@initargs))))
+                         (list type (apply #'make-instance (intern (format nil "FMT-~A" (symbol-name type)) :df-cl-utils) initargs))))
                       clauses)))
     (if (equalp clauses'(nil))
         (make-instance 'fmt)
-        (apply #'make-instance 'fmt (%parse-fmt-clauses clauses)))))
+        (apply #'make-instance 'fmt (%parse-fmt-clauses clauses)))
+    ))
 
 ;; options
 
 (defclass* options ()
+  ;; commands
+  (com/nl "$nl")
+  (com/cond-nl "$_nl") ; conditional newline
+  (com/delim "$d")
+  (com/delim-len 2)
+  ;;
   (out t) ; output stream
   (w-delim " ") ; thing that would delimit tokens
-  (nl-command :nl)
-  (nl-before-line-delim t) ; newline before line delimiter
-  (nl-after-line-delim t) ; newline after line delimiter
-  (use-prefix? t)
-  (delim-command :d[?]) ; ? is where the delimiter 
-  (delim-width 60)
-  (literal-comand :l)
+  (nl-before-com/delim? t) ; newline before line delimiter
+  (nl-after-com/delim? t) ; newline after line delimiter
+  (delim-len 60)
   (macros nil)) ; (:-> "arrow, lol" :<> "туди-сюди")
 
-(defun build-options (&rest clauses)
+(defun build-options (clauses)
   (if (equalp clauses '(nil))
       (make-instance 'options)
       (apply #'make-instance 'options clauses)))
@@ -179,35 +185,28 @@ all the result list to a single list. FUNCTION must return a list."
 ;; (defmethod prepare-msg (()))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun form-gensym-name? (name)
-    (and (> (length name) 13) (string-equal (subseq name 0 13) "_FORM_GENSYM_")))
-
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
           (msg-list nil)
-          (id->form (make-hash-table))
           (context :msg)
           (fmt-init-list nil)
           (opts-init-list nil)
           ;; syntax settings
-          (prefix-command ">p")
-          (message-command ">msg")
-          (format-command ">fmt")
-          (options-command ">opts")
-          (literally-command ">l"))
+          (prefix-command "p>>")
+          (message-command "msg>>")
+          (format-command "fmt>>")
+          (options-command "opts>>")
+          )
       (labels ((%context-dep-push (el)
                  (case context
                    (:msg (push el msg-list))
                    (:p   (push el prefix-list))
                    (t (error "wut"))))
                (%lst (lst)
-                 (let ((el1 (first lst))
-                       (id (gensym "_FORM_GENSYM_")))
+                 (let ((el1 (first lst)))
                    (if (stringp el1)
-                       (setf (gethash id id->form) `(format nil ,el1 ,@(rest lst)))
-                       (setf (gethash id id->form) lst))
-                   (%context-dep-push id)))
-               (%lit () (%context-dep-push (pop clauses)))
+                       (%context-dep-push `(format nil ,el1 ,@(rest lst)))
+                       (%context-dep-push lst))))
                (%fmt () (setf fmt-init-list (pop clauses)))
                (%opts () (setf opts-init-list (pop clauses)))
                (%sym (sym)
@@ -216,8 +215,6 @@ all the result list to a single list. FUNCTION must return a list."
                          ((string-equal name message-command) (setf context :msg))
                          ((string-equal name format-command) (%fmt))
                          ((string-equal name options-command) (%opts))
-                         ((string-equal name literally-command) (%lit))
-                         ((form-gensym-name? name) (%context-dep-push "_FORM_GENSYM_"))
                          (t (%context-dep-push sym)))))
                (%parse ()
                  (let ((el1 (pop clauses)))
@@ -228,37 +225,47 @@ all the result list to a single list. FUNCTION must return a list."
                      ((numberp el1) (%context-dep-push el1))))
                  (when clauses (%parse))))
         (%parse)
-        (values prefix-list
-                msg-list
-                id->form
+        (values (nreverse prefix-list)
+                (nreverse msg-list)
                 (build-fmt fmt-init-list)
                 (build-options opts-init-list))))))
 
-
-(defun parser-test ()
-  (multiple-value-bind (prefix-list msg-list forms frmt opts)
-      (parse-dbp-clauses '(:p 1 2 3 4 msg opa opana :p heh  :l l msg l l her l p l msg :_f :_f ("~Afor~A" 'hop :real) l '("~s" 'anu) (format nil "hehmda") (loop for a from 0 to 10 do (prin1 a))))
-    (format t "~s~%~s~%~s~%~s~%~s~%-----------------------------~%" prefix-list msg-list forms frmt opts)
-    (traverse-slots frmt (lambda (name val) (format t "  ~S:~%" name) (pretty-print-object val t) (format t "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%")))
-    (format t "---------------------~%")
-    (pretty-print-object opts t)))
-
 (defmacro dbp2 (&body clauses)
-  (multiple-value-bind (prefix-list msg-list id->form frmt opts)
+  (multiple-value-bind (prefix-list msg-list frmt opts)
       (parse-dbp-clauses clauses)
     (let ((prefix-format-str (make-string-output-stream))
           (prefix-format-args nil)
           (msg-format-str (make-string-output-stream))
           (msg-format-args nil)
           (context nil))
-      (labels ((%write-by-context (str)
-                 (cond ((eq context :p) (format prefix-format-str "~A " str)) ((eq context :msg) (format msg-format-str "~A " str)) (t (error "wut2"))))
+      (labels ((%write-by-context (str &optional (use-w-delim? t))
+                 (let ((format-args `("~A~A" ,str ,(if use-w-delim? (w-delim opts) ""))))
+                   (cond ((eq context :p) (apply #'format prefix-format-str format-args))
+                         ((eq context :msg) (apply #'format msg-format-str format-args))
+                         (t (error "wut2")))))
                (%add-arg-by-context (el)
-                 (cond ((eq context :p) (push el prefix-format-args)) ((eq context :msg) (push el msg-format-args)) (t (error "wut3"))))
+                 (cond ((eq context :p) (setf prefix-format-args (append prefix-format-args (list el))))
+                       ((eq context :msg) (setf msg-format-args (append msg-format-args (list el))))
+                       (t (error "wut3"))))
                (%write/add-arg (str el) (%write-by-context str) (%add-arg-by-context el))
+               (%construct-delim (delim-el)
+                 (let* ((len (delim-len opts))
+                        (nl-bef (if (nl-before-com/delim? opts) "~_" ""))
+                        (nl-after (if (nl-after-com/delim? opts) "~%" "")))
+                   (with-output-to-string (s)
+                     (format* ("~A~A~A" nl-bef
+                                        (loop for i from 0 to (1+ (/ len (length delim-el))) do
+                                          (format s "~A" delim-el))
+                                        nl-after)
+                              len :truncate? t))))
                (%sym (sym)
-                 (let ((wut-to-write (if (form-gensym-name? (symbol-name sym)) (gethash sym id->form) sym)))
-                   (%write/add-arg "~A" wut-to-write)))
+                 (let ((name (symbol-name sym)))
+                   (cond ((string-equal name (com/nl opts)) (%write-by-context "~%" nil))
+                         ((string-equal name (com/cond-nl opts)) (%write-by-context "~_" nil))
+                         ((and (> (length name) (com/delim-len opts))
+                               (string-equal (subseq name 0 (com/delim-len opts)) (com/delim opts)))
+                          (%write-by-context (%construct-delim (subseq name (com/delim-len opts)))))
+                         (t (%write/add-arg "~A" sym)))))
                (%process-element (el)
                  (cond ((stringp el) (%write-by-context el))
                        ((symbolp el) (%sym el))
@@ -278,26 +285,27 @@ all the result list to a single list. FUNCTION must return a list."
                         ,(%get-msg-format-call))))))
 
 (defmethod print-message ((frmt fmt) (opts options) clips prefix-str msg-str)
-  (with-slots (clip) frmt
-        ))
+  (destructuring-bind (up-clip oneline-clip mid-clip down-clip) clips
+    (let ((prefix-str (prepare-prefix (prefix frmt) prefix-str))
+          (counter-str (prog1 (prepare-counter (counter frmt)) (incf *dbp-counter*))))
+      (labels ((%count-msg-lines ()
+                 (loop for ch across msg-str count (char-equal ch #\newline)))
+               (%clip-decide (ln-num nls)
+                 (cond
+                   ((= ln-num nls) down-clip)
+                   (t mid-clip)))
+               (%insert-prefixes ()
+                 (let ((nls (%count-msg-lines)))
+                   (if (= nls 0)
+                       (format nil "~A~A~A~A" oneline-clip counter-str prefix-str msg-str)
+                       (with-output-to-string (s)
+                         (format s "~A~A~A" up-clip counter-str prefix-str)
+                         (loop for ch across msg-str
+                               with i = 0
+                               do (format s "~c" ch)
+                                  (when (char-equal ch #\newline)
+                                    (incf i)
+                                    (format s "~A~A~A" (%clip-decide i nls) counter-str prefix-str))))))))
+        (format (out opts) (%insert-prefixes))))))
 
-;; (defmethod print-message ((frmt fmt) (opts options) msg-lst)
-;;   (with-slots (frmt-clip frmt-counter frmt-prefix frmt-msg frmt-order) frmt
-;;     (with-slots (opts-out opts-w-delim opts-nl-before-line-delim opts-nl-after-line-delim opts-use-prefix? opts-macros) opts
-;;       (labels ((%process-element (el)
-;;                  )
-;;                (%get-prefix ()
-;;                  (let ((el0 (first msg-list)))
-;;                    (%process-element el0))))
-;;         (let* ((clip-upper-str (prepare-clip frmt-clip :upper))
-;;                (clip-middle-str (prepare-clip frmt-clip :middle))
-;;                (clip-lower-str (prepare-clip frmt-clip :lower))
-;;                (counter-str (prepare-counter frmt-counter))
-;;                (prefix-str (if opts-use-prefix? (prepare-prefix frmt-prefix (%get-prefix)) ""))))))))
-
-;; (defun dbp-extended (&key (msg-lst nil) (opts nil) (frmt nil))
-;;   (let ((opts (build-options opts))
-;;         (frmt (build-fmt fmt)))
-;;     (print-message frmt opts msg-lst)))
-
-;; (defmacro dbp ())
+;; (dbp2 fmt>> ((:clip :size 3) (:prefix :size 16 :brace-left "[" :brace-right "]")) p>> 'op msg>> "heh mfa" :--> $nl $_nl $d- $_nl)
