@@ -182,21 +182,23 @@ all the result list to a single list. FUNCTION must return a list."
   (with-slots (size brace-left brace-right) prefix
     (format* (apply-braces prefix str) size :truncate? t)))
 
-;; (defmethod prepare-msg (()))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+
+  ;; syntax settings
+  (defparameter *syntax-settings*
+    '(:prefix-command    "p>"
+      :message-command   "m>"
+      :format-command    "?fmt"
+      :options-command   "?opts"
+      :literally-command "l>"))
+
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
           (msg-list nil)
           (context :msg)
           (fmt-init-list nil)
-          (opts-init-list nil)
-          ;; syntax settings
-          (prefix-command "p>>")
-          (message-command "msg>>")
-          (format-command "fmt>>")
-          (options-command "opts>>")
-          )
+          (opts-init-list nil))
       (labels ((%context-dep-push (el)
                  (case context
                    (:msg (push el msg-list))
@@ -227,8 +229,8 @@ all the result list to a single list. FUNCTION must return a list."
         (%parse)
         (values (nreverse prefix-list)
                 (nreverse msg-list)
-                (build-fmt fmt-init-list)
-                (build-options opts-init-list))))))
+                fmt-init-list
+                opts-init-list)))))
 
 (defmacro dbp2 (&body clauses)
   (multiple-value-bind (prefix-list msg-list frmt opts)

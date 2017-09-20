@@ -32,7 +32,7 @@
 ;;; will be read.
 
 ;; (in-package :pg)
-(in-package :df-cl-utils)
+(in-package :df-cl-utils) ; DF
 
 
 ;;;; ********************************************************************************
@@ -300,7 +300,7 @@
                                  (the simple-base-string (apply #'read-line args))   ; LMH
                                  ")"))))
 
-(declaim (stream *query-io*))  ; LMH
+;; (declaim (stream *query-io*))  ; LMH ; DF
 
 (defun prompt (&rest args)
   "Prompt by outputting text and reading something typed."   ; LMH
@@ -1151,7 +1151,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(alrec on-cdrs rec unions intersections differences maxmin)))   ; LMH
 
-#+(or cltl2 symbolics)    ; LMH
+;; #+(or cltl2 symbolics)    ; LMH ; DF
 (defmacro alrec (rec &optional base)
   "Anaphoric list recurser (lrec): use `it' to refer to the current
    car of the list, and `rec' to the function rec itself.
@@ -1161,11 +1161,13 @@
   (let ((gfn (gensym)))
     `(lrec #'(lambda (it ,gfn)
 	       (declare (ignorable it) (function ,gfn))   ; LMH
-               (#+cltl2 symbol-macrolet #+symbolics clos:symbol-macrolet ((rec (funcall ,gfn)))
+               (#| #+cltl2 symbol-macrolet #+symbolics clos:symbol-macrolet |# ; DF
+                symbol-macrolet
+                ((rec (funcall ,gfn)))
                  ,rec))
            ,base)))
-
-#-(or cltl2 symbolics)    ; LMH   -- I don't think this works
+#|
+#-(or cltl2 symbolics)    ; LMH   -- I don't think this works ; DF -- yep, not for me in 2017 on SBCL 1.3.19
 (defmacro alrec (rec &optional base)
   "Anaphoric list recurser (lrec): use `it' to refer to the current
    car of the list, and `rec' to the function rec itself.
@@ -1178,6 +1180,7 @@
                (labels ((rec () (funcall ,gfn)))
                  ,rec))
            ,base)))
+|#
 
 (defmacro on-cdrs (rec base &rest lsts)
   "Anaphoric list recursion, for defining named functions,
@@ -1216,18 +1219,20 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(atrec on-trees count-leaves flatten rfind-if)))   ; LMH
 
-#+(or cltl2 symbolics)    ; LMH
+;; #+(or cltl2 symbolics)    ; LMH ; DF
 (defmacro atrec (rec &optional (base 'it))
   "Anaphoric tree recursion: current tree is 'it, left subtree is 'left
    right subtree is 'right."   ; LMH
   (let ((lfn (gensym)) (rfn (gensym)))
     `(trec #'(lambda (it ,lfn ,rfn)
 	       (declare (ignorable it) (function ,lfn ,rfn))   ; LMH
-               (#+cltl2 symbol-macrolet #+symbolics clos:symbol-macrolet ((left (funcall ,lfn))
+               (#| #+cltl2 symbol-macrolet #+symbolics clos:symbol-macrolet |# ; DF
+                symbol-macrolet ((left (funcall ,lfn))
                                  (right (funcall ,rfn)))
                  ,rec))
            #'(lambda (it) (declare (ignorable it)) ,base)))); LMH
 
+#| ; DF
 #-(or cltl2 symbolics)    ; LMH
 (defmacro atrec (rec &optional (base 'it))
   "Anaphoric tree recursion: current tree is 'it, left subtree is 'left
@@ -1239,6 +1244,7 @@
                         (right () (funcall ,rfn)))
                  ,rec))
            #'(lambda (it) (declare (ignorable it)) ,base))))
+|#
 
 (defmacro on-trees (rec base &rest trees)
   "Anaphoric tree recursion, for defining named functions"   ; LMH
@@ -1266,13 +1272,19 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(force delay)))   ; LMH
 
-(defconstant unforced (gensym))
+;; http://www.sbcl.org/manual/#Idiosyncrasies
+;; '2.3.4 Defining Constants'
+(defmacro define-constant (name value &optional doc) ; DF
+  `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
+     ,@(when doc (list doc))))
+
+(define-constant +unforced+ (gensym)) ; DF
 
 (defstruct delay  forced closure)
 
 (defmacro delay (expr)
   (let ((self (gensym)))
-    `(let ((,self (make-delay :forced unforced)))
+    `(let ((,self (make-delay :forced +unforced+)))
        (setf (delay-closure ,self)
              #'(lambda ()
                  (setf (delay-forced ,self) ,expr)))
@@ -1280,7 +1292,7 @@
 
 (defun force (x)
   (if (delay-p x)
-      (if (eq (delay-forced x) unforced)
+      (if (eq (delay-forced x) +unforced+)
           (funcall (the function (delay-closure x)))   ; LMH the function
           (delay-forced x))
       x))

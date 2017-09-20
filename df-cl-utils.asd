@@ -4,7 +4,7 @@
   :author "Danylo Fedorov <fedorough@gmail.com>"
   :serial t
   :components ((:file "package")
-               (:file "onlisp.lisp")
+               (:file "onlisp")
                (:file "df-cl-utils")
                (:file "debug-print")
                (:file "debug-print2")))
