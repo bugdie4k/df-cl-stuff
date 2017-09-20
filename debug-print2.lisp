@@ -143,7 +143,7 @@ all the result list to a single list. FUNCTION must return a list."
   (nl-before-com/delim? t) ; newline before line delimiter
   (nl-after-com/delim? t) ; newline after line delimiter
   (delim-len 60)
-  (macros nil)) ; (:-> "arrow, lol" :<> "туди-сюди")
+  (macros nil)) ; (:-> "arrow, lol" :<> "туди-сюди") ;; TODO remove options class
 
 (defun build-options (clauses)
   (if (equalp clauses '(nil))
@@ -306,6 +306,8 @@ all the result list to a single list. FUNCTION must return a list."
                                   (when (char-equal ch #\newline)
                                     (incf i)
                                     (format s "~A~A~A" (%clip-decide i nls) counter-str prefix-str))))))))
-        (format (out opts) (%insert-prefixes))))))
+        (format (out opts) (%insert-prefixes))
+        (princ #\newline (out opts))
+        nil))))
 
 ;; (dbp2 fmt>> ((:clip :size 3) (:prefix :size 16 :brace-left "[" :brace-right "]")) p>> 'op msg>> "heh mfa" :--> $nl $_nl $d- $_nl)
