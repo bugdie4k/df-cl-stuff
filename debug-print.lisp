@@ -63,9 +63,19 @@
                                     :line-delimiter-length 60 :line-delimiter-width 1
                                     :mark-sections? t))
 
+(defparameter *dbp-applied-args* *dbp-standard-args*)
+
+(defparameter *dbp-logging?* t)
+
+;; (defun dbpi (s &rest args)
+;;   (let ((*dbp-standard-args* *dbp-applied-args*))
+;;     (setf (getf *dbp-standard-args* :stream) s)
+;;     (dbp args)))
+
 (defun dbp (&rest output-list)
   "Simple"
-  (apply #'dbpe :output-list output-list *dbp-standard-args*))
+  (when *dbp-logging?*
+    (apply #'dbpe :output-list output-list *dbp-applied-args*)))
 
 (defmacro dbps (&rest output-list-list)
   "Several with implicit :nl"
@@ -73,9 +83,9 @@
         (output-list-list (cdr output-list-list)))
     `(progn
        ,@(mapcar (lambda (output-list)
-                   `(apply #'dbpe :output-list ',(cons 1st output-list) :mark-sections? nil :increase-count? nil',*dbp-standard-args*))
+                   `(apply #'dbpe :output-list ',(cons 1st output-list) :mark-sections? nil :increase-count? nil',*dbp-applied-args*))
                  (butlast output-list-list))
-       (apply #'dbpe :output-list ',(cons 1st (car (last output-list-list))) :mark-sections? nil ',*dbp-standard-args*))))
+       (apply #'dbpe :output-list ',(cons 1st (car (last output-list-list))) :mark-sections? nil ',*dbp-applied-args*))))
 
 (defun dbp-reset ()
   (setf *dbp-count* 0))
