@@ -2,7 +2,6 @@
 
 ;; utils
 
-
 (defgeneric traverse-slots (obj fn)
   (:documentation "Use fn function on each slot. 'fn' must take two parameters: slot-name and slot-value."))
 
@@ -91,7 +90,7 @@ all the result list to a single list. FUNCTION must return a list."
   ;; (horizontal "─")
   (horizontal " ")
   (vertical "│")
-  (oneline "-")
+  (oneline "•")
   (side :left))
 
 (defclass* fmt-counter (fmt-size-mixin fmt-braces-mixin)
@@ -129,27 +128,6 @@ all the result list to a single list. FUNCTION must return a list."
         (apply #'make-instance 'fmt (%parse-fmt-clauses clauses)))
     ))
 
-;; options
-
-(defclass* options ()
-  ;; commands
-  (com/nl "$nl")
-  (com/cond-nl "$_nl") ; conditional newline
-  (com/delim "$d")
-  (com/delim-len 2)
-  ;;
-  (out t) ; output stream
-  (w-delim " ") ; thing that would delimit tokens
-  (nl-before-com/delim? t) ; newline before line delimiter
-  (nl-after-com/delim? t) ; newline after line delimiter
-  (delim-len 60)
-  (macros nil)) ; (:-> "arrow, lol" :<> "туди-сюди") ;; TODO remove options class
-
-(defun build-options (clauses)
-  (if (equalp clauses '(nil))
-      (make-instance 'options)
-      (apply #'make-instance 'options clauses)))
-
 ;; prepare
 
 (defmethod prepare-clip ((clip fmt-clip) place)
@@ -179,26 +157,50 @@ all the result list to a single list. FUNCTION must return a list."
      (format* (apply-braces counter *dbp-counter*) size)))
 
 (defmethod prepare-prefix ((prefix fmt-prefix) str)
-  (with-slots (size brace-left brace-right) prefix
-    (format* (apply-braces prefix str) size :truncate? t)))
+  (if str
+      (with-slots (size brace-left brace-right) prefix
+        (format* (apply-braces prefix str) size :truncate? t))
+      ""))
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
   ;; syntax settings
   (defparameter *syntax-settings*
-    '(:prefix-command    "p>"
-      :message-command   "m>"
-      :format-command    "?fmt"
-      :options-command   "?opts"
-      :literally-command "l>"))
+    (let ((ht (make-hash-table)))
+      (loop for (k v) on '(;; constructing commands
+                           :com1/pref "p>"
+                           :com1/msg  "m>"
+                           ;; string control commands
+                           :com2/lit  "l>"
+                           :com2/nl    "nl"
+                           :com2/cnl   "cnl"
+                           :com2/delim "?d"
+                           ;; settings
+                           :set/fmt         "?fmt"
+                           :set/words-delim "?wd"
+                           :set/delim-len   "?dl"
+                           :set/delim-nl-b?  "?d-nl-b"
+                           :set/delim-nl-a?  "?d-nl-a"
+                           :set/stream       "?s"
+                           )
+            do (setf (gethash k ht) v))
+      ht))
+
+  (defun getcom1 (key) (gethash (intern (concatenate 'string "COM1/" (symbol-name key)) :KEYWORD) *syntax-settings*))
+  (defun getcom2 (key) (gethash (intern (concatenate 'string "COM2/" (symbol-name key)) :KEYWORD) *syntax-settings*))
+  (defun getset  (key) (gethash (intern (concatenate 'string "SET/" (symbol-name key)) :KEYWORD) *syntax-settings*))
+
+  (defparameter *default-setting-values* '(:fmt nil :words-delim " " :delim-len 60 :delim-nl-b? t :delim-nl-a? t :stream t))
+
+  (defun getdefset (key) (getf *default-setting-values* key))
 
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
           (msg-list nil)
           (context :msg)
           (fmt-init-list nil)
-          (opts-init-list nil))
+          (settings-list nil))
       (labels ((%context-dep-push (el)
                  (case context
                    (:msg (push el msg-list))
@@ -210,13 +212,17 @@ all the result list to a single list. FUNCTION must return a list."
                        (%context-dep-push `(format nil ,el1 ,@(rest lst)))
                        (%context-dep-push lst))))
                (%fmt () (setf fmt-init-list (pop clauses)))
-               (%opts () (setf opts-init-list (pop clauses)))
+               (%set (type) (push (pop clauses) settings-list) (push type settings-list))
                (%sym (sym)
                  (let ((name (symbol-name sym)))
-                   (cond ((string-equal name prefix-command) (setf context :p))
-                         ((string-equal name message-command) (setf context :msg))
-                         ((string-equal name format-command) (%fmt))
-                         ((string-equal name options-command) (%opts))
+                   (cond ((string-equal name (getcom1 :pref)) (setf context :p))
+                         ((string-equal name (getcom1 :msg)) (setf context :msg))
+                         ((string-equal name (getset :fmt)) (%fmt))
+                         ((string-equal name (getset :words-delim)) (%set :words-delim))
+                         ((string-equal name (getset :delim-len)) (%set :delim-len))
+                         ((string-equal name (getset :delim-nl-b?)) (%set :delim-nl-b?))
+                         ((string-equal name (getset :delim-nl-a?)) (%set :delim-nl-a?))
+                         ((string-equal name (getset :stream)) (%set :stream))
                          (t (%context-dep-push sym)))))
                (%parse ()
                  (let ((el1 (pop clauses)))
@@ -230,64 +236,87 @@ all the result list to a single list. FUNCTION must return a list."
         (values (nreverse prefix-list)
                 (nreverse msg-list)
                 fmt-init-list
-                opts-init-list)))))
+                settings-list))))
 
-(defmacro dbp2 (&body clauses)
-  (multiple-value-bind (prefix-list msg-list frmt opts)
-      (parse-dbp-clauses clauses)
-    (let ((prefix-format-str (make-string-output-stream))
-          (prefix-format-args nil)
-          (msg-format-str (make-string-output-stream))
-          (msg-format-args nil)
-          (context nil))
-      (labels ((%write-by-context (str &optional (use-w-delim? t))
-                 (let ((format-args `("~A~A" ,str ,(if use-w-delim? (w-delim opts) ""))))
-                   (cond ((eq context :p) (apply #'format prefix-format-str format-args))
-                         ((eq context :msg) (apply #'format msg-format-str format-args))
-                         (t (error "wut2")))))
-               (%add-arg-by-context (el)
-                 (cond ((eq context :p) (setf prefix-format-args (append prefix-format-args (list el))))
-                       ((eq context :msg) (setf msg-format-args (append msg-format-args (list el))))
-                       (t (error "wut3"))))
-               (%write/add-arg (str el) (%write-by-context str) (%add-arg-by-context el))
-               (%construct-delim (delim-el)
-                 (let* ((len (delim-len opts))
-                        (nl-bef (if (nl-before-com/delim? opts) "~_" ""))
-                        (nl-after (if (nl-after-com/delim? opts) "~%" "")))
-                   (with-output-to-string (s)
-                     (format* ("~A~A~A" nl-bef
-                                        (loop for i from 0 to (1+ (/ len (length delim-el))) do
-                                          (format s "~A" delim-el))
-                                        nl-after)
-                              len :truncate? t))))
-               (%sym (sym)
-                 (let ((name (symbol-name sym)))
-                   (cond ((string-equal name (com/nl opts)) (%write-by-context "~%" nil))
-                         ((string-equal name (com/cond-nl opts)) (%write-by-context "~_" nil))
-                         ((and (> (length name) (com/delim-len opts))
-                               (string-equal (subseq name 0 (com/delim-len opts)) (com/delim opts)))
-                          (%write-by-context (%construct-delim (subseq name (com/delim-len opts)))))
-                         (t (%write/add-arg "~A" sym)))))
-               (%process-element (el)
-                 (cond ((stringp el) (%write-by-context el))
-                       ((symbolp el) (%sym el))
-                       ((listp el)   (%write/add-arg "~A" el))
-                       ((numberp el) (%write-by-context el))))
-               (%get-prefix-format-call ()
-                 (setf context :p)
-                 (dolist (i prefix-list) (%process-element i))
-                 `(format nil ,(get-output-stream-string prefix-format-str) ,@prefix-format-args))
-               (%get-msg-format-call ()
-                 (setf context :msg)
-                 (dolist (i msg-list) (%process-element i))
-                 `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))
-        `(print-message ,frmt ,opts
-                        ',(prepare-clips (clip frmt))
-                        ,(%get-prefix-format-call)
-                        ,(%get-msg-format-call))))))
+  (defmacro dbp2 (&body clauses)
+    (multiple-value-bind (prefix-list msg-list frmt-list settings-list) ; opts
+        (parse-dbp-clauses clauses)
+      ;; (format t "~A~A~A~A~%" prefix-list msg-list frmt-list settings-list)
+      (let ((prefix-format-str (make-string-output-stream))
+            (prefix-format-args nil)
+            (msg-format-str (make-string-output-stream))
+            (msg-format-args nil)
+            (context nil)
+            (lit? nil))
+        (labels ((%getset (key) (or (getf settings-list key)
+                                    (getdefset key)))
+                 (%nl? (el)
+                   (and (symbolp el)
+                        (or (string-equal (symbol-name el) (getcom2 :nl))
+                            (string-equal (symbol-name el) (getcom2 :nl)))))
+                 (%write-by-context (str &optional (use-w-delim? t))
+                   (let ((format-args `("~A~A" ,str ,(if (and use-w-delim?
+                                                              (not (%nl? use-w-delim?)))
+                                                         (%getset :words-delim)
+                                                         ""))))
+                     (cond ((eq context :p) (apply #'format prefix-format-str format-args))
+                           ((eq context :msg) (apply #'format msg-format-str format-args))
+                           (t (error "wut2")))))
+                 (%add-arg-by-context (el)
+                   (cond ((eq context :p) (setf prefix-format-args (append prefix-format-args (list el))))
+                         ((eq context :msg) (setf msg-format-args (append msg-format-args (list el))))
+                         (t (error "wut3"))))
+                 (%write/add-arg (str el &optional (use-w-delim? t))
+                   (%write-by-context str use-w-delim?) (%add-arg-by-context el))
+                 (%construct-delim (delim-el)
+                   (let* ((len (%getset :delim-len))
+                          (nl-bef (if (%getset :delim-nl-b?) "~_" ""))
+                          (nl-after (if (%getset :delim-nl-a?) "~%" "")))
+                     (with-output-to-string (s)
+                       (format* ("~A~A~A" nl-bef
+                                          (loop for i from 0 to (1+ (/ len (length delim-el))) do
+                                            (format s "~A" delim-el))
+                                          nl-after)
+                                len :truncate? t))))
+                 (%delim? (name)
+                   (let* ((d (getcom2 :delim))
+                          (dlen (length d)))
+                     (and (> (length name) dlen)
+                          (string-equal (subseq name 0 dlen) d))))
+                 (%delim (name &optional (use-w-delim? t))
+                   (%write-by-context (%construct-delim (subseq name (length (symbol-name (getcom2 :delim))))) use-w-delim?))
+                 (%sym (sym &optional (use-w-delim? t))
+                   (let ((name (symbol-name sym)))
+                     (cond ((string-equal name (getcom2 :nl)) (%write-by-context "~%" nil))
+                           ((string-equal name (getcom2 :cnl)) (%write-by-context "~_" nil))
+                           ((%delim? name) (%delim name use-w-delim?))
+                           ((string-equal name (getcom2 :lit)) (setf lit? t))
+                           (t (%write/add-arg "~A" sym use-w-delim?)))))
+                 (%process-element (el &optional (use-w-delim? t))
+                   (if lit?
+                       (progn (%write/add-arg "~A" el use-w-delim?) (setf lit? nil))
+                       (cond ((stringp el) (%write-by-context el use-w-delim?))
+                             ((symbolp el) (%sym el use-w-delim?))
+                             ((listp el)   (%write/add-arg "~A" el use-w-delim?))
+                             ((numberp el) (%write-by-context el use-w-delim?)))))
+                 (%get-prefix-format-call ()
+                   (when prefix-list
+                     (setf context :p)
+                     (loop for i on prefix-list do (%process-element (car i) (car (cdr i))))
+                     `(format nil ,(get-output-stream-string prefix-format-str) ,@prefix-format-args)))
+                 (%get-msg-format-call ()
+                   (when msg-list
+                     (setf context :msg)
+                     (loop for i on msg-list do (%process-element (car i) (car (cdr i))))
+                     `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args))))
+          `(print-message (build-fmt ,frmt-list)
+                          :prefix-str ,(%get-prefix-format-call)
+                          :msg-str    ,(%get-msg-format-call)
+                          :return     nil ;; TODO <--
+                          :stream     ,(%getset :stream)))))))
 
-(defmethod print-message ((frmt fmt) (opts options) clips prefix-str msg-str)
-  (destructuring-bind (up-clip oneline-clip mid-clip down-clip) clips
+(defmethod print-message ((frmt fmt) &key prefix-str msg-str return stream)
+  (destructuring-bind (up-clip oneline-clip mid-clip down-clip) (prepare-clips (clip frmt))
     (let ((prefix-str (prepare-prefix (prefix frmt) prefix-str))
           (counter-str (prog1 (prepare-counter (counter frmt)) (incf *dbp-counter*))))
       (labels ((%count-msg-lines ()
@@ -308,8 +337,8 @@ all the result list to a single list. FUNCTION must return a list."
                                   (when (char-equal ch #\newline)
                                     (incf i)
                                     (format s "~A~A~A" (%clip-decide i nls) counter-str prefix-str))))))))
-        (format (out opts) (%insert-prefixes))
-        (princ #\newline (out opts))
-        nil))))
+        (format stream (%insert-prefixes))
+        (princ #\newline stream)
+        (apply #'values return)))))
 
 ;; (dbp2 fmt>> ((:clip :size 3) (:prefix :size 16 :brace-left "[" :brace-right "]")) p>> 'op msg>> "heh mfa" :--> $nl $_nl $d- $_nl)
