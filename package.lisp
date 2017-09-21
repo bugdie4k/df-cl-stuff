@@ -11,6 +11,7 @@
            #:has-such-slot?
            #:has-such-slot?/with-wildcard-string
            #:pretty-print-object
+           #:defclasss
            ;; debug print
            #:dbp
            #:dbpe
@@ -18,4 +19,6 @@
            #:dbps
            #:make-up
            #:clean-string
-           #:to-printable-string))
+           #:to-printable-string
+           ;; debug print 2
+           #:dbp2))

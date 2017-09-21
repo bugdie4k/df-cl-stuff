@@ -1,46 +1,12 @@
 (in-package #:df-cl-utils)
 
-;; utils
-
-(defgeneric traverse-slots (obj fn)
-  (:documentation "Use fn function on each slot. 'fn' must take two parameters: slot-name and slot-value."))
-
-(defmethod traverse-slots (obj fn)
-  (labels ((%traverse-slots (slots-lst)
-             (when slots-lst
-               (let* ((slot (car slots-lst))
-                      (def-name (sb-mop:slot-definition-name slot))
-                      (name (symbol-name def-name))
-                      (value (slot-value obj def-name)))
-                 (funcall fn name value)
-                 (%traverse-slots (cdr slots-lst))))))
-    (%traverse-slots (sb-mop:class-slots (class-of obj)))))
-
-
-(defgeneric pretty-print-object (obj stream)
-  (:documentation "Pretty printer for objects. Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
-
-(defmethod pretty-print-object (obj stream)
-  (format stream (with-output-to-string (s)
-                   (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
-
 ;;
 
-(defmacro defclass* (name direct-superclasses &rest direct-slots)
-  `(defclass ,name ,direct-superclasses
-     ,(when direct-slots
-        (mapcar (lambda (slot-def)
-                  (let ((slotname (first slot-def)))
-                    (list slotname :accessor (intern (symbol-name slotname))
-                                   :initarg (intern (symbol-name slotname) "KEYWORD")
-                                   :initform (second slot-def))))
-                direct-slots))))
-
 (defun mappend (function &rest lists)
-  "Applies FUNCTION to respective element(s) of each LIST, appending all the
-all the result list to a single list. FUNCTION must return a list."
   (loop for results in (apply #'mapcar function lists)
         append results))
+
+;;
 
 (defmacro format* (fmt-or-string size &key (format-letter :A) align truncate? (stream nil))
   `(format*-aux ,(if (and (listp fmt-or-string) (stringp (first fmt-or-string))) `(format nil ,@fmt-or-string) fmt-or-string) ,size :format-letter ,format-letter :align ,align :truncate? ,truncate? :stream ,stream))
@@ -72,10 +38,10 @@ all the result list to a single list. FUNCTION must return a list."
 
 ;; format
 
-(defclass* fmt-size-mixin ()
+(defclasss fmt-size-mixin ()
   (size 1))
 
-(defclass* fmt-braces-mixin ()
+(defclasss fmt-braces-mixin ()
   (brace-left "")
   (brace-right ""))
 
@@ -83,7 +49,7 @@ all the result list to a single list. FUNCTION must return a list."
   (with-slots (brace-left brace-right) braces
     (format nil format-string brace-left str brace-right)))
 
-(defclass* fmt-clip (fmt-size-mixin)
+(defclasss fmt-clip (fmt-size-mixin)
   (size 2)
   (up "┌")
   (down "└")
@@ -93,17 +59,17 @@ all the result list to a single list. FUNCTION must return a list."
   (oneline "•")
   (side :left))
 
-(defclass* fmt-counter (fmt-size-mixin fmt-braces-mixin)
+(defclasss fmt-counter (fmt-size-mixin fmt-braces-mixin)
   (size 4)
   (brace-right "> "))
 
-(defclass* fmt-prefix (fmt-size-mixin fmt-braces-mixin)
+(defclasss fmt-prefix (fmt-size-mixin fmt-braces-mixin)
   (size 16))
 
-(defclass* fmt-msg (fmt-size-mixin fmt-braces-mixin)
+(defclasss fmt-msg (fmt-size-mixin fmt-braces-mixin)
   (size 60))
 
-(defclass* fmt ()
+(defclasss fmt ()
   (clip (make-instance 'fmt-clip))
   (counter (make-instance 'fmt-counter))
   (prefix (make-instance 'fmt-prefix))
@@ -278,8 +244,8 @@ all the result list to a single list. FUNCTION must return a list."
                    (%write-by-context str use-w-delim?) (%add-arg-by-context el))
                  (%construct-delim (delim-el prev next)
                    (let* ((len (%getset :delim-len))
-                          (nl-bef (if (and (%getset :delim-nl-b?) prev (not (%nl? prev))) "~%" ""))
-                          (nl-after (if (and (%getset :delim-nl-a?) next (not (%nl? next))) "~%" "")))
+                          (nl-bef (if (and (not (eq (%getset :delim-nl-b?) :no)) prev (not (%nl? prev))) "~%" (if (and prev (not (%nl? prev))) (%getset :words-delim) "")))
+                          (nl-after (if (and (not (eq (%getset :delim-nl-a?) :no)) next (not (%nl? next))) "~%" (if (and next (not (%nl? next))) (%getset :words-delim) ""))))
                      (format nil "~A~A~A"
                              nl-bef
                              (format* ("~A" (with-output-to-string (s)

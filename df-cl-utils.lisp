@@ -17,7 +17,7 @@ I originally made this as a task for my SHARAGA, but I decided to keep it, whate
                (cond ((and swl sl)
                       (if (char= swl-1st wildcard)
                           (let* ((swl-rest (%skip-wildcard (rest swl)))
-                                 (swl-2nd (first swl-rest)))                            
+                                 (swl-2nd (first swl-rest)))
                             (if swl-2nd
                                 (do ((sl-rest sl (rest sl-rest)))
                                     ((null sl-rest))
@@ -125,5 +125,26 @@ If slot value is already a string it is not converted."))
 
 (defmethod pretty-print-object (obj stream)
   (format stream (with-output-to-string (s)
-     (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
+                   (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
 
+;;;
+
+(defmacro defclasss (name direct-superclasses &rest direct-slots)
+  "Third s if for 'simple'.
+Defining slots you may specify initform as the second el,
+and type as third.
+"
+  (labels ((%get-slot-def (sym &optional (initform nil))
+             (list sym :accessor (intern (symbol-name sym))
+                       :initarg (intern (symbol-name sym) "KEYWORD")
+                       :initform initform)))
+    `(defclass ,name ,direct-superclasses
+       ,(when direct-slots
+          (mapcar (lambda (slot-def)
+                    (if (symbolp slot-def)
+                        (%get-slot-def slot-def)
+                        (let* ((slotname (first slot-def))
+                               (res-slot-def (%get-slot-def slotname (second slot-def)))
+                               (type? (third slot-def)))
+                          (if type? (append res-slot-def `(:type ,type?)) res-slot-def))))
+                  direct-slots)))))
