@@ -172,17 +172,18 @@ all the result list to a single list. FUNCTION must return a list."
                            :com1/pref "p>"
                            :com1/msg  "m>"
                            ;; string control commands
-                           :com2/lit  "l>"
+                           :com2/lit   "l>"
                            :com2/nl    "nl"
                            :com2/cnl   "cnl"
                            :com2/delim "?d"
                            ;; settings
-                           :set/fmt         "?fmt"
-                           :set/words-delim "?wd"
-                           :set/delim-len   "?dl"
-                           :set/delim-nl-b?  "?d-nl-b"
-                           :set/delim-nl-a?  "?d-nl-a"
-                           :set/stream       "?s"
+                           :set/fmt           "?fmt"
+                           :set/words-delim   "?wd"
+                           :set/delim-len     "?dl"
+                           :set/delim-nl-b?   "?d-nl-b"
+                           :set/delim-nl-a?   "?d-nl-a"
+                           :set/stream        "?s"
+                           :set/reset-counter "?rs" ;; TODO <--
                            )
             do (setf (gethash k ht) v))
       ht))
