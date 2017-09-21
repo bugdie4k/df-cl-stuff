@@ -172,10 +172,11 @@ all the result list to a single list. FUNCTION must return a list."
                            :com1/pref "p>"
                            :com1/msg  "m>"
                            ;; string control commands
-                           :com2/lit   "l>"
+                           :com2/lit   "l"
                            :com2/nl    "nl"
                            :com2/cnl   "cnl"
-                           :com2/delim "?d"
+                           :com2/delim "d"
+                           :com2/string "str" ;; TODO <--
                            ;; settings
                            :set/fmt           "?fmt"
                            :set/words-delim   "?wd"
@@ -187,6 +188,12 @@ all the result list to a single list. FUNCTION must return a list."
                            )
             do (setf (gethash k ht) v))
       ht))
+
+  (defun parse-defcommand-caluses ()
+    )
+
+  (defmacro defcommand (class &rest clauses)
+    )
 
   (defun getcom1 (key) (gethash (intern (concatenate 'string "COM1/" (symbol-name key)) :KEYWORD) *syntax-settings*))
   (defun getcom2 (key) (gethash (intern (concatenate 'string "COM2/" (symbol-name key)) :KEYWORD) *syntax-settings*))
@@ -233,7 +240,7 @@ all the result list to a single list. FUNCTION must return a list."
                      ((symbolp el1) (%sym el1))
                      ((numberp el1) (%context-dep-push el1))))
                  (when clauses (%parse))))
-        (%parse)
+        (when clauses (%parse))
         (values (nreverse prefix-list)
                 (nreverse msg-list)
                 fmt-init-list
@@ -242,7 +249,7 @@ all the result list to a single list. FUNCTION must return a list."
   (defmacro dbp2 (&body clauses)
     (multiple-value-bind (prefix-list msg-list frmt-list settings-list) ; opts
         (parse-dbp-clauses clauses)
-      ;; (format t "~A~A~A~A~%" prefix-list msg-list frmt-list settings-list)
+      ;; (format t "~A - ~A - ~A - ~A~%" prefix-list msg-list frmt-list settings-list)
       (let ((prefix-format-str (make-string-output-stream))
             (prefix-format-args nil)
             (msg-format-str (make-string-output-stream))
@@ -319,7 +326,8 @@ all the result list to a single list. FUNCTION must return a list."
 (defmethod print-message ((frmt fmt) &key prefix-str msg-str return stream)
   (destructuring-bind (up-clip oneline-clip mid-clip down-clip) (prepare-clips (clip frmt))
     (let ((prefix-str (prepare-prefix (prefix frmt) prefix-str))
-          (counter-str (prog1 (prepare-counter (counter frmt)) (incf *dbp-counter*))))
+          (counter-str (prog1 (prepare-counter (counter frmt)) (incf *dbp-counter*)))
+          (msg-str (or msg-str "")))
       (labels ((%count-msg-lines ()
                  (loop for ch across msg-str count (char-equal ch #\newline)))
                (%clip-decide (ln-num nls)
