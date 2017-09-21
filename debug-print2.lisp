@@ -60,7 +60,7 @@
   (side :left))
 
 (defclasss fmt-counter (fmt-size-mixin fmt-braces-mixin)
-  (size 4)
+  (size 6)
   (brace-right "> "))
 
 (defclasss fmt-prefix (fmt-size-mixin fmt-braces-mixin)
