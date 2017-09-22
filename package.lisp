@@ -21,4 +21,5 @@
            #:clean-string
            #:to-printable-string
            ;; debug print 2
-           #:dbp2))
+           #:dbp2
+           #:dbp2-reset))

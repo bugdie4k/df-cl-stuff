@@ -25,15 +25,14 @@
 ;; vars
 
 (defvar *dbp-counter* 0)
-(defvar *dbp-format* nil)
-(defvar *dbp-options* nil)
+;; (defvar *dbp-format* nil)
 
 ;;
 
 (defun count++ ()
   (incf *dbp-counter*))
 
-(defun dbp-reset-counter ()
+(defun dbp2-reset ()
   (setf *dbp-counter* 0))
 
 ;; format
@@ -75,13 +74,6 @@
   (prefix (make-instance 'fmt-prefix))
   (msg (make-instance 'fmt-msg)))
 
-;; (build-fmt
-;; '(
-;;  (:clip :size 1 :up "┌" :down "└" :vertical "│" :horizontal "─" :side :left)
-;;  (:counter :size 4 :brace-left "" :brace-right ">")
-;;  (:prefix :size 16 :brace-left "" :brace-right "")
-;;  (:msg :size 60 :brace-left "" :brace-right "")
-;;  ))
 (defun build-fmt (clauses)
   (labels ((%parse-fmt-clauses (clauses)
              (mappend (lambda (clause)
@@ -158,7 +150,7 @@
   ;; (defun parse-defcommand ()
   ;;   )
 
-  ;; (defmacro defcommand (class &rest clauses)
+  ;; (defmacro defcommand (class &rest clauses) ;; TODO <--
   ;;   )
 
   (defun getcom1 (key) (gethash (intern (concatenate 'string "COM1/" (symbol-name key)) :KEYWORD) *syntax-settings*))
