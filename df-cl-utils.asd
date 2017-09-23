@@ -5,6 +5,6 @@
   :serial t
   :components ((:file "package")
                (:file "onlisp")
-               (:file "df-cl-utils")
-               (:file "debug-print")
-               (:file "debug-print2")))
+               (:file "stuff")
+               (:file "fmt")
+               (:file "dbp")))

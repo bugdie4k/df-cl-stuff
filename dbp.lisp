@@ -1,12 +1,6 @@
 (in-package #:df-cl-utils)
 
-;;
-
-(defun mappend (function &rest lists)
-  (loop for results in (apply #'mapcar function lists)
-        append results))
-
-;;
+;; 
 
 (defmacro format* (fmt-or-string size &key (format-letter :A) align truncate? (stream nil))
   `(format*-aux ,(if (and (listp fmt-or-string) (stringp (first fmt-or-string))) `(format nil ,@fmt-or-string) fmt-or-string) ,size :format-letter ,format-letter :align ,align :truncate? ,truncate? :stream ,stream))
@@ -22,17 +16,14 @@
             (format nil "~~~A~:[~;@~]~A" size (%wut-align) format-letter)
             (%truncate-string-maybe))))
 
+;;
+
 ;; vars
 
 (defvar *dbp-counter* 0)
 ;; (defvar *dbp-format* nil)
 
-;;
-
-(defun count++ ()
-  (incf *dbp-counter*))
-
-(defun dbp2-reset ()
+(defun dbp-reset ()
   (setf *dbp-counter* 0))
 
 ;; format
@@ -204,7 +195,7 @@
                 fmt-init-list
                 settings-list))))
 
-  (defmacro dbp2 (&body clauses)
+  (defmacro dbp (&body clauses)
     (multiple-value-bind (prefix-list msg-list frmt-list settings-list) ; opts
         (parse-dbp-clauses clauses)
       ;; (format t "~A - ~A - ~A - ~A~%" prefix-list msg-list frmt-list settings-list)
@@ -310,5 +301,3 @@
         (format stream (%insert-prefixes))
         (format stream "~%")
         (apply #'values return)))))
-
-;; (dbp2 fmt>> ((:clip :size 3) (:prefix :size 16 :brace-left "[" :brace-right "]")) p>> 'op msg>> "heh mfa" :--> $nl $_nl $d- $_nl)

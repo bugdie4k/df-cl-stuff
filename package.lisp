@@ -1,25 +1,19 @@
 (defpackage #:df-cl-utils
-  (:nicknames #:dfclu #:df)
+  (:nicknames #:df)
   (:use #:cl)
-  (:export #:skip-el
-           #:string-equal-with-wildcards
+  (:export ;; stuff.lisp
            #:copy-instance
-           #:replace-in-tree
-           #:mv-let*
-           #:format-concatenate
-           #:traverse-slots
-           #:has-such-slot?
-           #:has-such-slot?/with-wildcard-string
-           #:pretty-print-object
            #:defclasss
-           ;; debug print
+           #:mv-let*
+           #:traverse-slots
+           #:has-slot?
+           #:pprint-obj
+           ;; fmt.lisp
+
+           ;; dbp.lisp
            #:dbp
-           #:dbpe
            #:dbp-reset
-           #:dbps
-           #:make-up
-           #:clean-string
-           #:to-printable-string
-           ;; debug print 2
-           #:dbp2
-           #:dbp2-reset))
+
+           ;; onlisp.lisp
+           
+           ))
