@@ -1,6 +1,6 @@
 (in-package #:df-cl-utils)
 
-;; 
+;;
 
 (defmacro format* (fmt-or-string size &key (format-letter :A) align truncate? (stream nil))
   `(format*-aux ,(if (and (listp fmt-or-string) (stringp (first fmt-or-string))) `(format nil ,@fmt-or-string) fmt-or-string) ,size :format-letter ,format-letter :align ,align :truncate? ,truncate? :stream ,stream))
