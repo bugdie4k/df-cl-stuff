@@ -1,11 +1,11 @@
 (in-package #:df-cl-utils)
 
-;;
+;; format+ 
 
-(defmacro format* (fmt-or-string size &key (format-letter :A) align truncate? (stream nil))
-  `(format*-aux ,(if (and (listp fmt-or-string) (stringp (first fmt-or-string))) `(format nil ,@fmt-or-string) fmt-or-string) ,size :format-letter ,format-letter :align ,align :truncate? ,truncate? :stream ,stream))
+(defmacro format+ (fmt-or-string size &key (format-letter :A) align truncate? (stream nil))
+  `(format+-aux ,(if (and (listp fmt-or-string) (stringp (first fmt-or-string))) `(format nil ,@fmt-or-string) fmt-or-string) ,size :format-letter ,format-letter :align ,align :truncate? ,truncate? :stream ,stream))
 
-(defun format*-aux (string size &key format-letter align truncate? stream)
+(defun format+-aux (string size &key format-letter align truncate? stream)
   (labels ((%wut-align ()
              (cond ((or (eq align :right) (eq align :r)) t)
                    ((or (eq align :left) (eq align :l)) nil)
@@ -15,8 +15,6 @@
     (format stream
             (format nil "~~~A~:[~;@~]~A" size (%wut-align) format-letter)
             (%truncate-string-maybe))))
-
-;;
 
 ;; vars
 
@@ -82,13 +80,13 @@
 (defmethod prepare-clip ((clip fmt-clip) place)
   (with-slots (up oneline down vertical horizontal size side brace-left brace-right) clip
     (labels ((%build-corner (corner-char)
-               (let* ((corner-char (format* corner-char 1 :truncate? t))
-                      (rest (format* horizontal (1- size) :truncate? t))
+               (let* ((corner-char (format+ corner-char 1 :truncate? t))
+                      (rest (format+ horizontal (1- size) :truncate? t))
                       (left-part (if (eq side :left) corner-char rest))
                       (right-part (if (eq side :left) rest corner-char)))
                  (format nil "~A~A" left-part right-part)))
              (%build-mid (char)
-               (format* char size :align side :truncate? t)))
+               (format+ char size :align side :truncate? t)))
       (case place
         (:upper (%build-corner up))
         (:oneline (%build-mid oneline))
@@ -103,12 +101,12 @@
 
 (defmethod prepare-counter ((counter fmt-counter))
   (with-slots (size brace-left brace-right) counter
-     (format* (apply-braces counter *dbp-counter*) size)))
+     (format+ (apply-braces counter *dbp-counter*) size)))
 
 (defmethod prepare-prefix ((prefix fmt-prefix) str)
   (if str
       (with-slots (size brace-left brace-right) prefix
-        (format* (apply-braces prefix str) size :truncate? t))
+        (format+ (apply-braces prefix str) size :truncate? t))
       ""))
 
 
@@ -138,11 +136,49 @@
             do (setf (gethash k ht) v))
       ht))
 
-  ;; (defun parse-defcommand ()
-  ;;   )
+  (defparameter *syntax* (make-hash-table))
+  (defparameter *settings* (make-hash-table))
 
-  ;; (defmacro defcommand (class &rest clauses) ;; TODO <--
-  ;;   )
+  (defun defcommand-aux (class clauses)
+    (let ((class-ht (make-hash-table)))
+      (dolist (clause clauses)
+        (destructuring-bind (name command) clause
+          (setf (gethash name class-ht) command)))
+      (setf (gethash class *syntax*) class-ht)))
+
+  (defmacro defcommands (class &rest clauses)
+    (defcommand-aux class clauses))
+
+  (defmacro getcom (class name)
+    `(gethash ',name (gethash ',class *syntax*)))
+
+  (defcommands com1
+    (pref "p>")
+    (msg  "m>"))
+
+  (defcommands com2
+    (lit "l")
+    (nl  "nl")
+    (cnl "cnl")
+    (delim "d"))
+
+  (defun defsettings-aux (clauses)
+    (dolist (clause clauses)
+      (destructuring-bind (name command default-state) clause
+        (setf (gethash name *settings*) (cons command default-state)))))
+
+  (defmacro defsettings (&rest clauses)
+    (defsettings-aux clauses))
+
+  (defmacro getsetcom (name)
+    `(car (gethash ',name *settings*)))
+
+  (defmacro getsetval (name)
+    `(cdr (gethash ',name *settings*)))
+
+  (defmacro setsetval (name val)
+    (setf (gethash ',name *settings*)
+          (cons ))) ;; TODO <--
 
   (defun getcom1 (key) (gethash (intern (concatenate 'string "COM1/" (symbol-name key)) :KEYWORD) *syntax-settings*))
   (defun getcom2 (key) (gethash (intern (concatenate 'string "COM2/" (symbol-name key)) :KEYWORD) *syntax-settings*))
@@ -231,7 +267,7 @@
                           (nl-after (if (and (not (eq (%getset :delim-nl-a?) :no)) next (not (%nl? next))) "~%" (if (and next (not (%nl? next))) (%getset :words-delim) ""))))
                      (format nil "~A~A~A"
                              nl-bef
-                             (format* ("~A" (with-output-to-string (s)
+                             (format+ ("~A" (with-output-to-string (s)
                                               (loop for i from 0 to (1+ (/ len (length delim-el))) do
                                                 (format s "~A" delim-el))))
                                       len :truncate? t)
