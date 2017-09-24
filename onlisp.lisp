@@ -39,9 +39,6 @@
 ;;;; Section 4.3, Utility Functions: Operations on Lists
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(last1 single append1 conc1 mklist longer filter group prune)))   ; LMH
-
 (declaim (inline last1 single append1 conc1 mklist))
 
 (defun last1 (lst)
@@ -125,9 +122,6 @@
 ;;;; ********************************************************************************
 ;;;;  Section 4.4, Utility Functions: Search
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(find2 before after duplicate split-if most best mostn)))   ; LMH
 
 (defun find2 (fn lst)
   "Find the first element of lst that satisfies fn, returning
@@ -227,9 +221,6 @@
 ;;;; Section 4.5, Utility Functions: Mapping
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(map0-n map1-n mapa-b map-> mappend mapcars rmapcar)))   ; LMH
-
 (defun map0-n (fn n)
   (declare (function fn) (fixnum n))   ; LMH
   "Apply the fn to the list of numbers 0...n."  ; LMH
@@ -290,9 +281,6 @@
 ;;;; Section 4.6, Utility Functions: I/O
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(readlist prompt break-loop)))   ; LMH
-
 (defun readlist (&rest args)
   "Read separate items and make into a list."   ; LMH
   (values (read-from-string
@@ -323,9 +311,6 @@
 ;;;; Section 4.7, Utility Functions: Symbols and Strings
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(mkstr symb reread explode)))   ; LMH
-
 (defun mkstr (&rest args)
   "Make a string out of the printed representations of the arguments."   ; LMH
   (with-output-to-string (s)
@@ -351,9 +336,6 @@
 ;;;; Section 5.2, Returning Functions: Orthogonality
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(! def!)))   ; LMH
-
 (defvar *!equivs* (make-hash-table))
 
 (defun ! (fn)
@@ -369,9 +351,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 5.3, Returning Functions: Memoizing
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(memoize defmemoize)))   ; LMH
 
 (defun memoize (fn)
   (declare (function fn))   ; LMH
@@ -394,9 +373,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 5.4, Returning Functions: Composing Functions
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(compose fif fint fun)))   ; LMH
 
 (defun compose (&rest fns)
   "Compose the functions."   ; LMH
@@ -446,9 +422,6 @@
 ;;;; Section 5.5, Returning Functions: Recursion on Cdrs
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(lrec)))   ; LMH
-
 (defun lrec (rec &optional base)
   (declare (function rec))			; LMH
   "Function to define flat list recurser.
@@ -477,9 +450,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 5.6, Returning Functions: Recursion on Subtrees
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(ttrav trec)))   ; LMH
 
 #|
 (defun find-if (fn tree)
@@ -544,9 +514,6 @@
 ;;;; Section 7.4, Macros: Testing Macroexpansion
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(mac)))   ; LMH
-
 (defmacro mac (expr)
   "Print macroexpansion."   ; LMH
   `(pprint (macroexpand-1 ',expr)))
@@ -554,9 +521,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 11.1, Classic Macros: Creating Context
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(when-bind when-bind* with-gensyms condlet)))   ; LMH
 
 (defmacro when-bind ((var expr) &body body)
   "Like a single let binding, but body is not executed if var is bound to nil"   ; LMH
@@ -615,9 +579,6 @@
 ;;;; Section 11.3, Classic Macros: Conditional Evaluation
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(if3 nif in inq in-if >case >casex)))   ; LMH
-
 (defmacro if3 (test t-case nil-case ?-case)
   "Three valued if."   ; LMH
   `(case ,test
@@ -671,9 +632,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 11.4, Classic Macros: Iteration
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(while till for do-tuples/o do-tuples/c)))   ; LMH
 
 (defmacro while (test &body body)
   "Repeatedly do body as long as test is true."   ; LMH
@@ -754,9 +712,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 11.5, Classic Macros: Iteration with Multiple Values
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(mvdo* mvpsetq shuffle mvdo)))   ; LMH
 
 (defmacro mvdo* (parm-cl test-cl &body body)
   "Like do, but each clause can bind multiple values."   ; LMH
@@ -860,9 +815,6 @@
 ;;;; Section 12.3, Generalized Variables: New Utilities
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(allf nilf tf toggle toggle2 concf conc1f concnew)))   ; LMH
-
 (defmacro allf (val &rest args)
   "Set a number of generalized variables to the same value."   ; LMH
   (with-gensyms (gval)
@@ -904,9 +856,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 12.4, Generalized Variables: More Complex Utilities
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(_f pull pull-if popn sortf)))   ; LMH
 
 (defmacro _f (op place &rest args)
   "Setf to a new value based on the old by applying op;
@@ -980,10 +929,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 14.1, Anaphoric Macros: Anaphoric Variants
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(it aif awhen awhile aand acond alambda ablock
-	       aif2 awhen2 acond2 read2 do-file)))   ; LMH
 
 (defmacro aif (test-form then-form &optional else-form)
   "Anaphoric if: use `it' in then-form, else-form to
@@ -1109,9 +1054,6 @@
 ;;;; Section 15.1, Macros Returning Functions: Building Functions
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(fn rbuild)))   ; LMH
-
 ;;; fn subsumes fif, fint, fun
 
 (defmacro fn (expr)
@@ -1147,9 +1089,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 15.1, Macros Returning Functions: Recursion on CDRS
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(alrec on-cdrs rec unions intersections differences maxmin)))   ; LMH
 
 ;; #+(or cltl2 symbolics)    ; LMH ; DF
 (defmacro alrec (rec &optional base)
@@ -1216,9 +1155,6 @@
 ;;;; Section 15.3, Macros Returning Functions: Recursion on Subtrees
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(atrec on-trees count-leaves flatten rfind-if)))   ; LMH
-
 ;; #+(or cltl2 symbolics)    ; LMH ; DF
 (defmacro atrec (rec &optional (base 'it))
   "Anaphoric tree recursion: current tree is 'it, left subtree is 'left
@@ -1269,9 +1205,6 @@
 ;;;; Section 15.4, Macros Returning Functions: Lazy evaluation
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(force delay)))   ; LMH
-
 ;; http://www.sbcl.org/manual/#Idiosyncrasies
 ;; '2.3.4 Defining Constants'
 (defmacro define-constant (name value &optional doc) ; DF
@@ -1301,9 +1234,6 @@
 ;;;; Section 16.1, Macro-Defining Macros: Abbreviations
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(abbrev abbrevs)))   ; LMH
-
 (defmacro abbrev (short long)
   "Define another name for the macro."   ; LMH
   `(defmacro ,short (&rest args)
@@ -1320,9 +1250,6 @@
 ;;;; Section 16.2, Macro-Defining Macros: Properties
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(propmacro propmacros)))   ; LMH
-
 (defmacro propmacro (propname)
   "Macro to define a property."   ; LMH
   `(defmacro ,propname (obj)
@@ -1337,9 +1264,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 16.3, Macro-Defining Macros: Anaphoric Macros
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(defanaph)))   ; LMH
 
 #|
 (defmacro defanaph (name &optional calls)
@@ -1403,9 +1327,6 @@
 ;;;; Section 17.3, Read Macros: Delimiters
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(defdelim)))   ; LMH
-
 (defmacro defdelim (left right parms &body body)
   "Define deliminters for dispatching read macros."   ; LMH
   `(ddfn ,left ,right #'(lambda ,parms ,@body)))
@@ -1438,16 +1359,13 @@
 ;;;; Section 18.2, Destructuring: Other Structures
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(dbind with-matrix with-array with-struct)))   ; LMH
-
 (defmacro dbind (pat seq &body body)
   "Destructuring bind for any kind of sequence."   ; LMH
   (let ((gseq (gensym)))
     `(let ((,gseq ,seq))
        ,(dbind-ex (destruc pat gseq #'atom) body))))
 
-(eval-when (compile load)    ; LMH destruc, dbind-ex needs to be loaded when match1 compiled
+(eval-when (:compile-toplevel :load-toplevel)    ; LMH destruc, dbind-ex needs to be loaded when match1 compiled
 
 (defun destruc (pat seq &optional (atom? #'atom) (n 0))
   (declare (function atom?) (fixnum n))   ; LMH
@@ -1525,9 +1443,6 @@
 ;;;; Section 18.3, Destructuring: Reference
 ;;;; ********************************************************************************
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(with-places)))   ; LMH
-
 (defmacro with-places (pat seq &body body)
   "Destructuring bind on generalized variables."   ; LMH
   (let ((gseq (gensym)))
@@ -1551,9 +1466,6 @@
 ;;;; ********************************************************************************
 ;;;; Section 18.4, Destructuring: Matching
 ;;;; ********************************************************************************
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(match)))
 
 (declaim (ftype (function (t t &optional t) (values list symbol)) match))
 (defun match (x y &optional binds)

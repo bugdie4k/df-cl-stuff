@@ -113,87 +113,58 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
   ;; syntax settings
-  (defparameter *syntax-settings*
-    (let ((ht (make-hash-table)))
-      (loop for (k v) on '(;; constructing commands
-                           :com1/pref "p>"
-                           :com1/msg  "m>"
-                           ;; string control commands
-                           :com2/lit   "l"
-                           :com2/nl    "nl"
-                           :com2/cnl   "cnl"
-                           :com2/delim "d"
-                           :com2/string "str" ;; TODO <--
-                           ;; settings
-                           :set/fmt           "?fmt"
-                           :set/words-delim   "?wd"
-                           :set/delim-len     "?dl"
-                           :set/delim-nl-b?   "?d-nl-b"
-                           :set/delim-nl-a?   "?d-nl-a"
-                           :set/stream        "?s"
-                           :set/reset-counter "?rs" ;; TODO <--
-                           )
-            do (setf (gethash k ht) v))
-      ht))
 
   (defparameter *syntax* (make-hash-table))
   (defparameter *settings* (make-hash-table))
 
-  (defun defcommand-aux (class clauses)
-    (let ((class-ht (make-hash-table)))
-      (dolist (clause clauses)
-        (destructuring-bind (name command) clause
-          (setf (gethash name class-ht) command)))
-      (setf (gethash class *syntax*) class-ht)))
-
   (defmacro defcommands (class &rest clauses)
-    (defcommand-aux class clauses))
+    `(let ((class-ht (make-hash-table)))
+       (dolist (clause ',clauses)
+         (destructuring-bind (name command) clause
+           (setf (gethash name class-ht) command)))
+       (setf (gethash ',class *syntax*) class-ht)))
 
-  (defmacro getcom (class name)
-    `(gethash ',name (gethash ',class *syntax*)))
+  (defmacro get-com (class name)
+    `(gethash ,name (gethash ',(intern (symbol-name class)) *syntax*)))
 
   (defcommands com1
-    (pref "p>")
-    (msg  "m>"))
+    (:pref "p>")
+    (:msg  "m>"))
 
   (defcommands com2
-    (lit "l")
-    (nl  "nl")
-    (cnl "cnl")
-    (delim "d"))
-
-  (defun defsettings-aux (clauses)
-    (dolist (clause clauses)
-      (destructuring-bind (name command default-state) clause
-        (setf (gethash name *settings*) (cons command default-state)))))
+    (:lit "l")
+    (:nl  "nl")
+    (:cnl "cnl")
+    (:delim "d"))
 
   (defmacro defsettings (&rest clauses)
-    (defsettings-aux clauses))
+    `(dolist (clause ',clauses)
+       (destructuring-bind (name command default-value) clause
+         (setf (gethash name *settings*) (cons command default-value)))))
 
-  (defmacro getsetcom (name)
-    `(car (gethash ',name *settings*)))
+  (defmacro get-setcom (name)
+    `(car (gethash ,name *settings*)))
 
-  (defmacro getsetval (name)
-    `(cdr (gethash ',name *settings*)))
+  (defmacro get-setval (name)
+    `(cdr (gethash ,name *settings*)))
 
-  (defmacro setsetval (name val)
-    (setf (gethash ',name *settings*)
-          (cons ))) ;; TODO <--
+  (defmacro set-setval (name val)
+    `(setf (gethash ,name *settings*)
+           (cons (car (gethash ,name *settings*)) ,val)))
 
-  (defun getcom1 (key) (gethash (intern (concatenate 'string "COM1/" (symbol-name key)) :KEYWORD) *syntax-settings*))
-  (defun getcom2 (key) (gethash (intern (concatenate 'string "COM2/" (symbol-name key)) :KEYWORD) *syntax-settings*))
-  (defun getset  (key) (gethash (intern (concatenate 'string "SET/" (symbol-name key)) :KEYWORD) *syntax-settings*))
-
-  (defparameter *default-setting-values* '(:fmt nil :words-delim " " :delim-len 60 :delim-nl-b? t :delim-nl-a? t :stream t))
-
-  (defun getdefset (key) (getf *default-setting-values* key))
+  (defsettings
+    (:fmt "?fmt" nil)
+    (:delim-len "?dl" 60)
+    (:delim-nl-b? "?d-nl-b" t)
+    (:delim-nl-a? "?d-nl-a" t)
+    (:stream "?s" t)
+    (:reset-counter "?rsc" nil))
 
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
           (msg-list nil)
           (context :msg)
-          (fmt-init-list nil)
-          (settings-list nil))
+          (fmt-init-list nil))
       (labels ((%context-dep-push (el)
                  (case context
                    (:msg (push el msg-list))
@@ -205,17 +176,17 @@
                        (%context-dep-push `(format nil ,el1 ,@(rest lst)))
                        (%context-dep-push lst))))
                (%fmt () (setf fmt-init-list (pop clauses)))
-               (%set (type) (push (pop clauses) settings-list) (push type settings-list))
+               (%set (type) (set-setval type (pop clauses)))
                (%sym (sym)
                  (let ((name (symbol-name sym)))
-                   (cond ((string-equal name (getcom1 :pref)) (setf context :p))
-                         ((string-equal name (getcom1 :msg)) (setf context :msg))
-                         ((string-equal name (getset :fmt)) (%fmt))
-                         ((string-equal name (getset :words-delim)) (%set :words-delim))
-                         ((string-equal name (getset :delim-len)) (%set :delim-len))
-                         ((string-equal name (getset :delim-nl-b?)) (%set :delim-nl-b?))
-                         ((string-equal name (getset :delim-nl-a?)) (%set :delim-nl-a?))
-                         ((string-equal name (getset :stream)) (%set :stream))
+                   (cond ((string-equal name (get-com :com1 :pref)) (setf context :p))
+                         ((string-equal name (get-com :com1 :msg)) (setf context :msg))
+                         ((string-equal name (get-setcom :fmt)) (%fmt))
+                         ((string-equal name (get-setcom :words-delim)) (%set :words-delim))
+                         ((string-equal name (get-setcom :delim-len)) (%set :delim-len))
+                         ((string-equal name (get-setcom :delim-nl-b?)) (%set :delim-nl-b?))
+                         ((string-equal name (get-setcom :delim-nl-a?)) (%set :delim-nl-a?))
+                         ((string-equal name (get-setcom :stream)) (%set :stream))
                          (t (%context-dep-push sym)))))
                (%parse ()
                  (let ((el1 (pop clauses)))
@@ -228,11 +199,10 @@
         (when clauses (%parse))
         (values (nreverse prefix-list)
                 (nreverse msg-list)
-                fmt-init-list
-                settings-list))))
+                fmt-init-list))))
 
   (defmacro dbp (&body clauses)
-    (multiple-value-bind (prefix-list msg-list frmt-list settings-list) ; opts
+    (multiple-value-bind (prefix-list msg-list frmt-list) ; opts
         (parse-dbp-clauses clauses)
       ;; (format t "~A - ~A - ~A - ~A~%" prefix-list msg-list frmt-list settings-list)
       (let ((prefix-format-str (make-string-output-stream))
@@ -241,16 +211,14 @@
             (msg-format-args nil)
             (context nil)
             (lit? nil))
-        (labels ((%getset (key) (or (getf settings-list key)
-                                    (getdefset key)))
-                 (%nl? (el)
+        (labels ((%nl? (el)
                    (and (symbolp el)
-                        (or (string-equal (symbol-name el) (getcom2 :nl))
+                        (or (string-equal (symbol-name el) (get-com :com2 :nl))
                             (%delim? (symbol-name el)))))
                  (%write-by-context (str &optional (use-w-delim? t))
                    (let ((format-args `("~A~A" ,str ,(if (and use-w-delim?
                                                               (not (%nl? use-w-delim?)))
-                                                         (%getset :words-delim)
+                                                         (get-setval :words-delim)
                                                          ""))))
                      (cond ((eq context :p) (apply #'format prefix-format-str format-args))
                            ((eq context :msg) (apply #'format msg-format-str format-args))
@@ -262,9 +230,9 @@
                  (%write/add-arg (str el &optional (use-w-delim? t))
                    (%write-by-context str use-w-delim?) (%add-arg-by-context el))
                  (%construct-delim (delim-el prev next)
-                   (let* ((len (%getset :delim-len))
-                          (nl-bef (if (and (not (eq (%getset :delim-nl-b?) :no)) prev (not (%nl? prev))) "~%" (if (and prev (not (%nl? prev))) (%getset :words-delim) "")))
-                          (nl-after (if (and (not (eq (%getset :delim-nl-a?) :no)) next (not (%nl? next))) "~%" (if (and next (not (%nl? next))) (%getset :words-delim) ""))))
+                   (let* ((len (get-setval :delim-len))
+                          (nl-bef (if (and (not (eq (get-setval :delim-nl-b?) :no)) prev (not (%nl? prev))) "~%" (if (and prev (not (%nl? prev))) (get-setval :words-delim) "")))
+                          (nl-after (if (and (not (eq (get-setval :delim-nl-a?) :no)) next (not (%nl? next))) "~%" (if (and next (not (%nl? next))) (get-setval :words-delim) ""))))
                      (format nil "~A~A~A"
                              nl-bef
                              (format+ ("~A" (with-output-to-string (s)
@@ -273,18 +241,18 @@
                                       len :truncate? t)
                              nl-after)))
                  (%delim? (name)
-                   (let* ((d (getcom2 :delim))
+                   (let* ((d (get-com :com2 :delim))
                           (dlen (length d)))
                      (and (> (length name) dlen)
                           (string-equal (subseq name 0 dlen) d))))
                  (%delim (prev name next)
-                   (%write-by-context (%construct-delim (subseq name (length (getcom2 :delim))) prev next) nil))
+                   (%write-by-context (%construct-delim (subseq name (length (get-com :com2 :delim))) prev next) nil))
                  (%sym (prev sym next)
                    (let ((name (symbol-name sym)))
-                     (cond ((string-equal name (getcom2 :nl)) (%write-by-context "~%" nil))
-                           ;; ((string-equal name (getcom2 :cnl)) (%write-by-context "~_" nil))
+                     (cond ((string-equal name (get-com :com2 :nl)) (%write-by-context "~%" nil))
+                           ((string-equal name (get-com :com2 :cnl)) (%write-by-context "~&" nil))
                            ((%delim? name) (%delim prev name next))
-                           ((string-equal name (getcom2 :lit)) (setf lit? t))
+                           ((string-equal name (get-com :com2 :lit)) (setf lit? t))
                            (t (%write/add-arg "~A" sym next)))))
                  (%process-element (prev el next)
                    (if lit?
@@ -309,7 +277,7 @@
                           :prefix-str ,(%get-prefix-format-call)
                           :msg-str    ,(%get-msg-format-call)
                           :return     nil ;; TODO <--
-                          :stream     ,(%getset :stream)))))))
+                          :stream     ,(get-setval :stream)))))))
 
 (defmethod print-message ((frmt fmt) &key prefix-str msg-str return stream)
   (destructuring-bind (up-clip oneline-clip mid-clip down-clip) (prepare-clips (clip frmt))
