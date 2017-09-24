@@ -8,13 +8,18 @@
            #:traverse-slots
            #:has-slot?
            #:pprint-obj
-           ;; fmt.lisp
 
+           ;; fmt.lisp
+           #:fmt
+           #:fmts
+           #:fmt-l
+           #:formats
+           #:format-l
 
            ;; dbp.lisp
            #:dbp
            #:dbp-reset
 
            ;; onlisp.lisp
-           
+
            ))
