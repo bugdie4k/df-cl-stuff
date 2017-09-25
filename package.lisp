@@ -8,6 +8,8 @@
            #:traverse-slots
            #:has-slot?
            #:pprint-obj
+           ;;
+           #:mkup
 
            ;; fmt.lisp
            #:fmt

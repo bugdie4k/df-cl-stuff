@@ -81,3 +81,32 @@ and type as third."
 (defmethod pprint-obj (obj stream)
   (format stream (with-output-to-string (s)
                    (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
+
+;;
+
+(defun clean-string (string)
+  (let ((spaces? nil)
+        (newlines? nil))
+    (string-trim (format nil " ~%")
+                 (coerce (loop for c across string
+                               unless (or (and spaces? (char= c #\space))
+                                          (and newlines? (char= c #\newline)))
+                                 collect c
+                               do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
+                               (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
+                         'string))))
+
+(defun to-printable-string (arg)
+  (clean-string (write-to-string arg)))
+
+(defun mkup (thing)
+  (labels ((%sharp-replace (str)
+             (coerce (loop for c across str
+                           collect
+                           (cond ((char= c #\#) #\space)
+                                 ((or (char= c #\<)
+                                      (char= c #\>)) #\space)
+                                 (t c)))
+                     'string)))
+    (write-to-string (read-from-string (%sharp-replace (to-printable-string thing))))))
+
