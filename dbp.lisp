@@ -366,13 +366,13 @@
                    (if (= nls 0)
                        (format nil "~A~A~A~A" oneline-clip counter-str prefix-str msg-str)
                        (with-output-to-string (s)
-                         (format s "~A~A~A" up-clip counter-str prefix-str)
+                         (format s "~A~A~A " up-clip counter-str prefix-str)
                          (loop for ch across msg-str
                                with i = 0
                                do (format s "~c" ch)
                                   (when (char-equal ch #\newline)
                                     (incf i)
-                                    (format s "~A~A~A" (%clip-decide i nls) counter-str prefix-str))))))))
+                                    (format s "~A~A~A " (%clip-decide i nls) counter-str prefix-str))))))))
         (format stream "~A" (%insert-prefixes))
         (format stream "~%")
         return))))
