@@ -153,14 +153,14 @@
 
   (defmacro defsettings (&rest clauses)
     `(dolist (clause ',clauses)
-       (destructuring-bind (name command default-value) clause
-         (setf (gethash name *settings*) (cons command default-value)))))
+       (destructuring-bind (name command default-value action) clause
+         (setf (gethash name *settings*) (list command default-value action)))))
 
   (defmacro ^get-settings-command (name)
-    `(car (gethash ,name *settings*)))
+    `(first (gethash ,name *settings*)))
 
   (defmacro ^get-settings-default (name)
-    `(cdr (gethash ,name *settings*)))
+    `(second (gethash ,name *settings*)))
 
   ;; syntax definition
 
@@ -176,16 +176,16 @@
     (:delim "d"))
 
   (defsettings
-    (:fmt           "?fmt"       nil)
-    (:delim-len     "?dl"        60)
-    (:delim-nl-b?   "?d-nl-b"    t)
-    (:delim-nl-a?   "?d-nl-a"    t)
-    (:stream        "?s"         t)
-    (:words-delim   "?wd"        " ")
-    (:reset-counter "?rsc"       nil)
-    (:return        "?return"    nil)
-    (:noclip        "?noclip"    nil)
-    (:nocounter     "?nocounter" nil))
+    (:fmt           "?fmt"       nil :fmt)
+    (:delim-len     "?dl"        60  :next)
+    (:delim-nl-b?   "?d-nl-b"    t   :next)
+    (:delim-nl-a?   "?d-nl-a"    t   :next)
+    (:stream        "?s"         t   :next)
+    (:words-delim   "?wd"        " " :next)
+    (:reset-counter "?rsc"       nil (:set t))
+    (:return        "?return"    nil :next)
+    (:noclip        "?noclip"    nil (:set t))
+    (:nocounter     "?nocounter" nil (:set t)))
 
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
