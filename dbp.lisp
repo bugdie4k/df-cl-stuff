@@ -287,31 +287,30 @@
                (%write/add-arg (str el &optional (use-w-delim? t))
                  (%write-by-context str use-w-delim?) (%add-arg-by-context el))
                (%construct-delim (delim-el prev next)
-                 (let* ((len (%getsetting :delim-len))
-                        (nl-bef (if (and (not (eq (%getsetting :delim-nl-b?) :no)) prev (not (%nl-or-delim? prev)))
-                                    "~%"
-                                    (if (and prev (not (%nl-or-delim? prev)))
-                                        (%getsetting :words-delim)
-                                        "")))
-                        (nl-after (if (and (not (eq (%getsetting :delim-nl-a?) :no)) next (not (%nl? next)))
-                                      "~%"
-                                      (if (and next (not (%nl-or-delim? next)))
-                                          (%getsetting :words-delim)
-                                          ""))))
-                   (format nil "~A~A~A"
-                           nl-bef
-                           (fmt+ (":A" (with-output-to-string (s)
-                                         (loop for i from 0 to (1+ (/ len (length delim-el))) do
-                                           (format s "~A" delim-el))))
-                                 :size len :truncate? t)
-                           nl-after)))
+                 (let ((len (%getsetting :delim-len)))
+                   (fmt+ (":A" (with-output-to-string (s)
+                                 (loop for i from 0 to (1+ (/ len (length delim-el))) do
+                                   (format s "~A" delim-el))))
+                         :size len :truncate? t :stream nil)))
                (%delim? (name)
                  (let* ((d (^get-command :delim))
                         (dlen (length d)))
                    (and (> (length name) dlen)
                         (string-equal (subseq name 0 dlen) d))))
                (%delim (prev name next)
-                 (%write-by-context (%construct-delim (subseq name (length (^get-command :delim))) prev next) nil))
+                 (let ((nl-bef (if (and (not (eq (%getsetting :delim-nl-b?) :no)) prev (not (%nl-or-delim? prev)))
+                                   "~%"
+                                   (if (and prev (not (%nl-or-delim? prev)))
+                                       (%getsetting :words-delim)
+                                       "")))
+                       (nl-after (if (and (not (eq (%getsetting :delim-nl-a?) :no)) next (not (%nl? next)))
+                                     "~%"
+                                     (if (and next (not (%nl-or-delim? next)))
+                                         (%getsetting :words-delim)
+                                         ""))))
+                   (%write-by-context nl-bef nil)
+                   (%write/add-arg "~A" (%construct-delim (subseq name (length (^get-command :delim))) prev next) nil)
+                   (%write-by-context nl-after nil)))
                (%sym (prev sym next)
                  (let ((name (symbol-name sym)))
                    (cond ((string-equal name (^get-command :nl)) (%write-by-context "~%" nil))
@@ -374,7 +373,7 @@
                                   (when (char-equal ch #\newline)
                                     (incf i)
                                     (format s "~A~A~A" (%clip-decide i nls) counter-str prefix-str))))))))
-        (format stream (%insert-prefixes))
+        (format stream "~A" (%insert-prefixes))
         (format stream "~%")
         return))))
 
