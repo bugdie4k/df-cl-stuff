@@ -286,7 +286,7 @@
                        (t (error "wut3"))))
                (%write/add-arg (str el &optional (use-w-delim? t))
                  (%write-by-context str use-w-delim?) (%add-arg-by-context el))
-               (%construct-delim (delim-el-str prev next)
+               (%construct-delim (delim-el prev next)
                  (let* ((len (%getsetting :delim-len))
                         (nl-bef (if (and (not (eq (%getsetting :delim-nl-b?) :no)) prev (not (%nl-or-delim? prev)))
                                     "~%"
@@ -300,9 +300,9 @@
                                           ""))))
                    (format nil "~A~A~A"
                            nl-bef
-                           (fmt+ (with-output-to-string (s)
-                                   (loop for i from 0 to (1+ (/ len (length delim-el-str))) do
-                                     (format s "~A" delim-el-str)))
+                           (fmt+ (":A" (with-output-to-string (s)
+                                         (loop for i from 0 to (1+ (/ len (length delim-el))) do
+                                           (format s "~A" delim-el))))
                                  :size len :truncate? t)
                            nl-after)))
                (%delim? (name)
@@ -337,8 +337,7 @@
                    (setf context :msg)
                    (let (prev)
                      (loop for (a b) on msg-list do (%process-element prev a b) (setf prev a))
-                     ;; KLUDGE
-                     `(format nil ,(coerce (loop for ch across (get-output-stream-string msg-format-str) append (if (char= ch #\~) (list #\~ #\~ #\~ #\~) (list ch))) 'string) ,@msg-format-args)))))
+                     `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))))
         (let ((frmt (build-fmt frmt-list)))
           `(progn ,(when (%getsetting :reset-counter) (dbp-reset))
                   (print-dbp-message ,frmt
