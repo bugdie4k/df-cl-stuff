@@ -14,9 +14,9 @@
            ;; fmt.lisp
            #:fmt
            #:fmts
-           #:fmt-l
+           #:fmt4l
            #:formats
-           #:format-l
+           #:format4l
 
            ;; dbp.lisp
            #:dbp

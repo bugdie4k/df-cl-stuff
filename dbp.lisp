@@ -162,6 +162,9 @@
   (defmacro ^get-settings-default (name)
     `(second (gethash ,name *settings*)))
 
+  (defun trav-settings (fn)
+    (maphash fn *settings*))
+
   ;; syntax definition
 
   (defsyntax
@@ -216,25 +219,25 @@
                              (%context-dep-push `(fmt-l nil ,str ,@(rest lst)))
                              (error "~A must be string" str)))
                        (error "~A must be a list" lst))))
+               (%check-settings (name)
+                 (trav-settings
+                  (lambda (k v)
+                    (when (string-equal name (first v))
+                      (let ((action (third v)))
+                        (cond ((eq action :next) (%set-next k))
+                              ((and (listp action) (eq (first action) :set)) (%set k (second action)))
+                              ((eq action :fmt) (%fmt))))
+                      (return-from %check-settings t))))
+                 nil)
                (%sym (sym)
                  (let ((name (symbol-name sym)))
-                   (cond
-                     ;; com1
-                     ((string-equal name (^get-command :pref)) (setf context :p))
-                     ((string-equal name (^get-command :msg))  (setf context :msg))
-                     ((string-equal name (^get-command :fmt-l)) (%fmt-l))
-                     ;; settings
-                     ((string-equal name (^get-settings-command :fmt))           (%fmt))
-                     ((string-equal name (^get-settings-command :words-delim))   (%set-next :words-delim))
-                     ((string-equal name (^get-settings-command :delim-len))     (%set-next :delim-len))
-                     ((string-equal name (^get-settings-command :delim-nl-b?))   (%set-next :delim-nl-b?))
-                     ((string-equal name (^get-settings-command :delim-nl-a?))   (%set-next :delim-nl-a?))
-                     ((string-equal name (^get-settings-command :stream))        (%set-next :stream))
-                     ((string-equal name (^get-settings-command :reset-counter)) (%set :reset-counter t))
-                     ((string-equal name (^get-settings-command :return))        (%set-next :return))
-                     ((string-equal name (^get-settings-command :noclip))        (%set :noclip t))
-                     ((string-equal name (^get-settings-command :nocounter))     (%set :nocounter t))
-                     (t (%context-dep-push sym)))))
+                   (or (%check-settings name)
+                       (cond
+                         ;; com1
+                         ((string-equal name (^get-command :pref)) (setf context :p))
+                         ((string-equal name (^get-command :msg))  (setf context :msg))
+                         ((string-equal name (^get-command :fmt-l)) (%fmt-l))
+                         (t (%context-dep-push sym))))))
                (%parse ()
                  (let ((el1 (pop clauses)))
                    (cond
@@ -252,7 +255,7 @@
 (defun build-print-dbp-message-call (clauses)
   (multiple-value-bind (prefix-list msg-list frmt-list settings-list)
       (parse-dbp-clauses clauses)
-    ;; (fmt t ":A:%:A:%:A:%:A:%" prefix-list msg-list frmt-list settings-list)
+    ;; (fmt ":A:%:A:%:A:%:A:%" prefix-list msg-list frmt-list settings-list)
     (let ((prefix-format-str (make-string-output-stream))
           (prefix-format-args nil)
           (msg-format-str (make-string-output-stream))
@@ -286,7 +289,7 @@
                        (t (error "wut3"))))
                (%write/add-arg (str el &optional (use-w-delim? t))
                  (%write-by-context str use-w-delim?) (%add-arg-by-context el))
-               (%construct-delim (delim-el prev next)
+               (%construct-delim (delim-el)
                  (let ((len (%getsetting :delim-len)))
                    (fmt+ (":A" (with-output-to-string (s)
                                  (loop for i from 0 to (1+ (/ len (length delim-el))) do
@@ -309,7 +312,7 @@
                                          (%getsetting :words-delim)
                                          ""))))
                    (%write-by-context nl-bef nil)
-                   (%write/add-arg "~A" (%construct-delim (subseq name (length (^get-command :delim))) prev next) nil)
+                   (%write/add-arg "~A" (%construct-delim (subseq name (length (^get-command :delim)))) nil)
                    (%write-by-context nl-after nil)))
                (%sym (prev sym next)
                  (let ((name (symbol-name sym)))
