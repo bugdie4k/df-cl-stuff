@@ -188,7 +188,8 @@
     (:reset-counter "?rsc"       nil (:set t))
     (:return        "?return"    nil :next)
     (:noclip        "?noclip"    nil (:set t))
-    (:nocounter     "?nocounter" nil (:set t)))
+    (:nocounter     "?nocounter" nil (:set t))
+    (:nonewline     "?nonl"      nil (:set t)))
 
   (defun parse-dbp-clauses (clauses)
     (let ((prefix-list nil)
@@ -348,9 +349,10 @@
                                      :return     ,(%getsetting :return)
                                      :stream     ,(%getsetting :stream)
                                      :clips      ,(unless (%getsetting :noclip) `(list ,@(prepare-clips (clip frmt))))
-                                     :counter?   ,(not (%getsetting :nocounter)))))))))
+                                     :counter?   ,(not (%getsetting :nocounter))
+                                     :newline    ,(not (%getsetting :nonewline)))))))))
 
-(defun print-dbp-message (&key fmt-obj prefix-str msg-str return stream clips counter?)
+(defun print-dbp-message (&key fmt-obj prefix-str msg-str return stream clips counter? newline)
   (destructuring-bind (up-clip oneline-clip mid-clip down-clip) (or clips '("" "" "" ""))
     (let ((prefix-str (prepare-prefix (prefix fmt-obj) prefix-str))
           (counter-str (prog1 (if counter? (prepare-counter (counter fmt-obj)) "") (incf *dbp-counter*)))
@@ -374,7 +376,7 @@
                                     (incf i)
                                     (format s "~A~A~A " (%clip-decide i nls) counter-str prefix-str))))))))
         (format stream "~A" (%insert-prefixes))
-        (format stream "~%")
+        (when newline (format stream "~%"))
         return))))
 
 (defmacro dbp (&body clauses)
