@@ -342,7 +342,7 @@
                      `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))))
         (let ((frmt (build-fmt frmt-list)))
           `(progn ,(when (%getsetting :reset-counter) (dbp-reset))
-                  (print-dbp-message ,frmt
+                  (print-dbp-message :fmt-obj ,frmt
                                      :prefix-str ,(%get-prefix-format-call)
                                      :msg-str    ,(%get-msg-format-call)
                                      :return     ,(%getsetting :return)
@@ -350,13 +350,10 @@
                                      :clips      ,(unless (%getsetting :noclip) `(list ,@(prepare-clips (clip frmt))))
                                      :counter?   ,(not (%getsetting :nocounter)))))))))
 
-(defgeneric print-dbp-message (frmt &key prefix-str msg-str return stream clips counter?)
-  (:documentation "Print debug message"))
-
-(defmethod print-dbp-message ((frmt fmt) &key prefix-str msg-str return stream clips counter?)
+(defun print-dbp-message (&key fmt-obj prefix-str msg-str return stream clips counter?)
   (destructuring-bind (up-clip oneline-clip mid-clip down-clip) (or clips '("" "" "" ""))
-    (let ((prefix-str (prepare-prefix (prefix frmt) prefix-str))
-          (counter-str (prog1 (if counter? (prepare-counter (counter frmt)) "") (incf *dbp-counter*)))
+    (let ((prefix-str (prepare-prefix (prefix fmt-obj) prefix-str))
+          (counter-str (prog1 (if counter? (prepare-counter (counter fmt-obj)) "") (incf *dbp-counter*)))
           (msg-str (or msg-str "")))
       (labels ((%count-msg-lines ()
                  (loop for ch across msg-str count (char-equal ch #\newline)))
