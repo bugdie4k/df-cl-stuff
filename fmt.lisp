@@ -36,7 +36,7 @@
                ,@format-args))))
 
 (defmacro fmt (&rest args)
-  ": (semicolon) instead of ~ (tilde) and vice versa
+  ": (colon) instead of ~ (tilde) and vice versa
 you can ommit stream in call, t is default"
   (multiple-value-bind (stream fmt-string fmt-args) (%parse-fmt-args args)
     `(format ,stream ,(%translate-fmt-string fmt-string) ,@fmt-args)))
