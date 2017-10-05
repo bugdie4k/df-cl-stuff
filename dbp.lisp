@@ -342,7 +342,7 @@
                      `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))))
         (let ((frmt (build-fmt frmt-list)))
           `(progn ,(when (%getsetting :reset-counter) (dbp-reset))
-                  (print-dbp-message :fmt-obj ,frmt
+                  (print-dbp-message :fmt-obj    ,frmt
                                      :prefix-str ,(%get-prefix-format-call)
                                      :msg-str    ,(%get-msg-format-call)
                                      :return     ,(%getsetting :return)
