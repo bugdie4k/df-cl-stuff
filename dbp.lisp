@@ -342,7 +342,7 @@
                      (loop for (a b) on msg-list do (%process-element prev a b) (setf prev a))
                      `(format nil ,(get-output-stream-string msg-format-str) ,@msg-format-args)))))
         (let ((frmt (build-fmt frmt-list)))
-          `(progn ,(when (%getsetting :reset-counter) (dbp-reset))
+          `(progn ,(when (%getsetting :reset-counter) '(dbp-reset))
                   (print-dbp-message :fmt-obj    ,frmt
                                      :prefix-str ,(%get-prefix-format-call)
                                      :msg-str    ,(%get-msg-format-call)
