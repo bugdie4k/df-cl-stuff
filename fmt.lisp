@@ -37,31 +37,31 @@
 
 (defmacro fmt (&rest args)
   ": (colon) instead of ~ (tilde) and vice versa
-you can ommit stream in call, t is default"
+you can omit stream in call, t is default"
   (multiple-value-bind (stream fmt-string fmt-args) (%parse-fmt-args args)
     `(format ,stream ,(%translate-fmt-string fmt-string) ,@fmt-args)))
 
 (defmacro fmt4l (&rest args)
   "fmt for list. applies given fmt-string to each argument in a list.
-you can ommit stream in call, t is default"
+you can omit stream in call, t is default"
   (multiple-value-bind (stream fmt-string-for-arg fmt-args) (%parse-fmt-args args)
     (%4l-aux stream fmt-string-for-arg fmt-args #'%translate-fmt-string)))
 
 (defmacro fmts (&rest args)
   "(fmts stream (\":A:A\" a b) (\":20A:20A\" c d))
-you can ommit stream in call, t is default"
+you can omit stream in call, t is default"
   (multiple-value-bind (stream fmt-lists) (%parse-fmts-args args)
     (%s-aux stream fmt-lists #'%translate-fmt-string)))
 
 (defmacro format4l (&rest args)
   "format for list. applies given format-string to each argument in a list.
-you can ommit stream in call, t is default"
+you can omit stream in call, t is default"
   (multiple-value-bind (stream format-string-for-arg format-args) (%parse-fmt-args args)
     (%4l-aux stream format-string-for-arg format-args #'identity)))
 
 (defmacro formats (&rest args)
   "(formats stream (\"~A~A\" a b) (\"~20A~20A\" c d))
-you can ommit stream in call, t is default"
+you can omit stream in call, t is default"
   (multiple-value-bind (stream format-lists) (%parse-fmts-args args)
     (%s-aux stream format-lists #'identity)))
 
