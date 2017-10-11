@@ -15,6 +15,7 @@
            #:fmt
            #:fmts
            #:fmt4l
+           #:ft
            #:formats
            #:format4l
 

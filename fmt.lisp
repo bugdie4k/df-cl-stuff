@@ -35,6 +35,9 @@
       `(format ,stream ,(with-output-to-string (s) (loop repeat args-num collect (princ format-string-for-arg s)))
                ,@format-args))))
 
+(defmacro ft (&rest args)
+  `(fmt4l t ":A " ,@args))
+
 (defmacro fmt (&rest args)
   ": (colon) instead of ~ (tilde) and vice versa
 you can omit stream in call, t is default"
