@@ -30,8 +30,13 @@
 
 (defvar *dbp-counter* 0)
 
-(defun dbp-reset ()
+(defun dbp-reset-counter ()
   (setf *dbp-counter* 0))
+
+(defvar *dbp-format-settings* nil)
+
+(defun dbp-reset-format ()
+  (setf *dbp-format-settings* nil))
 
 ;; format
 
@@ -252,6 +257,10 @@
                 (nreverse msg-list)
                 fmt-init-list
                 settings-list)))))
+
+(defmethod copy-fmt ((frmt fmt))
+  ;; TODO
+  )
 
 (defun build-print-dbp-message-call (clauses)
   (multiple-value-bind (prefix-list msg-list frmt-list settings-list)
