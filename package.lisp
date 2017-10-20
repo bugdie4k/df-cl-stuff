@@ -21,7 +21,8 @@
 
            ;; dbp.lisp
            #:dbp
-           #:dbp-reset
+           #:dbp-reset-format
+           #:dbp-reset-counter
 
            ;; onlisp.lisp
 
