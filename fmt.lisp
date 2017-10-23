@@ -35,36 +35,43 @@
       `(format ,stream ,(with-output-to-string (s) (loop repeat args-num collect (princ format-string-for-arg s)))
                ,@format-args))))
 
-(defmacro ft (&rest args)
-  `(fmt4l t ":A " ,@args))
-
 (defmacro fmt (&rest args)
   ": (colon) instead of ~ (tilde) and vice versa
-you can omit stream in call, t is default"
+You can omit stream in call, t is default
+"
   (multiple-value-bind (stream fmt-string fmt-args) (%parse-fmt-args args)
     `(format ,stream ,(%translate-fmt-string fmt-string) ,@fmt-args)))
 
 (defmacro fmt4l (&rest args)
-  "fmt for list. applies given fmt-string to each argument in a list.
-you can omit stream in call, t is default"
+  "`fmt' for list. Applies given fmt-string to each argument in a list.
+You can omit stream in call, t is default
+"
   (multiple-value-bind (stream fmt-string-for-arg fmt-args) (%parse-fmt-args args)
     (%4l-aux stream fmt-string-for-arg fmt-args #'%translate-fmt-string)))
 
 (defmacro fmts (&rest args)
   "(fmts stream (\":A:A\" a b) (\":20A:20A\" c d))
-you can omit stream in call, t is default"
+You can omit stream in call, t is default
+"
   (multiple-value-bind (stream fmt-lists) (%parse-fmts-args args)
     (%s-aux stream fmt-lists #'%translate-fmt-string)))
 
+(defmacro ft (&rest args)
+  "Effectively an `echo' for CL
+"
+  `(fmt4l t ":A " ,@args))
+
 (defmacro format4l (&rest args)
-  "format for list. applies given format-string to each argument in a list.
-you can omit stream in call, t is default"
+  "`format' for list. Applies given format-string to each argument in a list.
+You can omit stream in call, t is default
+"
   (multiple-value-bind (stream format-string-for-arg format-args) (%parse-fmt-args args)
     (%4l-aux stream format-string-for-arg format-args #'identity)))
 
 (defmacro formats (&rest args)
   "(formats stream (\"~A~A\" a b) (\"~20A~20A\" c d))
-you can omit stream in call, t is default"
+You can omit stream in call, t is default
+"
   (multiple-value-bind (stream format-lists) (%parse-fmts-args args)
     (%s-aux stream format-lists #'identity)))
 
