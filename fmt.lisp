@@ -59,7 +59,8 @@ You can omit stream in call, t is default
 (defmacro e (&rest args)
   "Effectively an `echo' for CL
 "
-  `(fmt4l t ":A " ,@args))
+  `(progn (fmt4l t ":A " ,@args)
+          (fmt t ":%")))
 
 (defmacro format4l (&rest args)
   "`format' for list. Applies given format-string to each argument in a list.
