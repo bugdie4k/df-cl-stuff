@@ -56,7 +56,7 @@ You can omit stream in call, t is default
   (multiple-value-bind (stream fmt-lists) (%parse-fmts-args args)
     (%s-aux stream fmt-lists #'%translate-fmt-string)))
 
-(defmacro ft (&rest args)
+(defmacro e (&rest args)
   "Effectively an `echo' for CL
 "
   `(fmt4l t ":A " ,@args))
