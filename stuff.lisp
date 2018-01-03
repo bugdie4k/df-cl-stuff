@@ -58,7 +58,9 @@ and type as third."
 ;; traverse object slots
 
 (defgeneric traverse-slots (obj fn)
-  (:documentation "Use fn function on each slot. 'fn' must take two parameters: slot-name and slot-value."))
+  (:documentation
+   "Use fn function on each slot. 
+'fn' must take two parameters: slot-name and slot-value."))
 
 (defmethod traverse-slots (obj fn)
   (labels ((%traverse-slots (slots-lst)
@@ -77,12 +79,18 @@ and type as third."
 (defmethod has-slot? (obj name value test)
   (funcall test value (slot-value obj (intern (symbol-name name)))))
 
-(defgeneric pprint-obj (obj stream)
-  (:documentation "Pretty printer for objects. Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
+(defgeneric pprint-object (obj stream)
+  (:documentation
+   "Pretty printer for objects.
+Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
 
-(defmethod pprint-obj (obj stream)
-  (format stream (with-output-to-string (s)
-                   (traverse-slots obj (lambda (name val) (format s "~A: ~S~%" name val))))))
+(defmethod pprint-object (obj stream)
+  (format stream
+          (with-output-to-string (s)
+            (traverse-slots
+             obj
+             (lambda (name val)
+               (format s "~A: ~S~%" name val))))))
 
 ;;
 

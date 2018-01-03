@@ -7,23 +7,15 @@
            #:mv-let*
            #:traverse-slots
            #:has-slot?
-           #:pprint-obj
+           #:pprint-object
            ;;
            #:mkup
-
-           ;; fmt.lisp
-           #:fmt
-           #:fmts
-           #:fmt4l
-           #:e
-           #:formats
-           #:format4l
-
+           
            ;; dbp.lisp
            #:dbp
            #:dbp-reset-format
            #:dbp-reset-counter
 
            ;; onlisp.lisp
-
+           ;; TODO
            ))
