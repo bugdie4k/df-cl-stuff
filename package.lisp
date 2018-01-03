@@ -10,6 +10,7 @@
            #:pprint-object
            ;;
            #:mkup
+           #:string+
            
            ;; dbp.lisp
            #:dbp

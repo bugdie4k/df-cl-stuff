@@ -120,3 +120,6 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
                      'string)))
     (write-to-string (read-from-string (%sharp-replace (to-printable-string thing))))))
 
+(defun string+ (&rest strings)
+  (format nil "~{~A~}" strings))
+
