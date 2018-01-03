@@ -17,8 +17,8 @@
             (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
 
-(defmacro defclasss (name direct-superclasses &rest direct-slots)
-  "Third s if for 'simple'.
+(defmacro defclass+ (name direct-superclasses &rest direct-slots)
+  "Simpler class definition.
 Defining slots you may specify initform as the second el,
 and type as third."
   (labels ((%get-slot-def (sym &optional (initform nil))
@@ -31,9 +31,11 @@ and type as third."
                     (if (symbolp slot-def)
                         (%get-slot-def slot-def)
                         (let* ((slotname (first slot-def))
-                               (res-slot-def (%get-slot-def slotname (second slot-def)))
+                               (res-slot-def
+                                (%get-slot-def slotname (second slot-def)))
                                (type? (third slot-def)))
-                          (if type? (append res-slot-def `(:type ,type?)) res-slot-def))))
+                          (if type? (append res-slot-def `(:type ,type?))
+                              res-slot-def))))
                   direct-slots)))))
 
 (defmacro mv-let* (mv-let-list &body body)

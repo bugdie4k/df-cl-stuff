@@ -36,7 +36,7 @@
                ,@format-args))))
 
 (defmacro fmt (&rest args)
-  ": (colon) instead of ~ (tilde) and vice versa
+  "Like `format', but  with : (colon) instead of ~ (tilde) and vice versa
 You can omit stream in call, t is default
 "
   (multiple-value-bind (stream fmt-string fmt-args) (%parse-fmt-args args)
