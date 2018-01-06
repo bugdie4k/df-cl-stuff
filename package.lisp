@@ -1,22 +1,16 @@
-(defpackage #:df-cl-utils
+(defpackage #:df-cl-stuff
   (:nicknames #:df)
   (:use #:cl)
   (:export ;; stuff.lisp
            #:copy-instance
-           #:defclasss
+           #:defclass+
            #:mv-let*
            #:traverse-slots
            #:has-slot?
            #:pprint-object
-           ;;
            #:mkup
            #:string+
-           
-           ;; dbp.lisp
-           #:dbp
-           #:dbp-reset-format
-           #:dbp-reset-counter
-
+           #:fit-into
            ;; onlisp.lisp
            ;; TODO
            ))

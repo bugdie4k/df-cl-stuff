@@ -32,7 +32,7 @@
 ;;; will be read.
 
 ;; (in-package :pg)
-(in-package :df-cl-utils) ; DF
+(in-package :df-cl-stuff) ; DF
 
 
 ;;;; ********************************************************************************

@@ -1,4 +1,4 @@
-(in-package #:df-cl-utils)
+(in-package #:df-cl-stuff)
 
 ;; http://stackoverflow.com/questions/11067899/is-there-a-generic-method-for-cloning-clos-objects
 (defgeneric copy-instance (object &rest initargs &key &allow-other-keys)
@@ -59,7 +59,7 @@ and type as third."
 
 (defgeneric traverse-slots (obj fn)
   (:documentation
-   "Use fn function on each slot. 
+   "Use fn function on each slot.
 'fn' must take two parameters: slot-name and slot-value."))
 
 (defmethod traverse-slots (obj fn)
@@ -97,14 +97,17 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
 (defun clean-string (string)
   (let ((spaces? nil)
         (newlines? nil))
-    (string-trim (format nil " ~%")
-                 (coerce (loop for c across string
-                               unless (or (and spaces? (char= c #\space))
-                                          (and newlines? (char= c #\newline)))
-                                 collect c
-                               do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
-                               (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
-                         'string))))
+    (string-trim
+     (format nil " ~%")
+     (coerce
+      (loop
+         :for c :across string
+         :unless (or (and spaces? (char= c #\space))
+                     (and newlines? (char= c #\newline)))
+         :collect c
+         :do (if (char= c #\space) (setf spaces? t) (setf spaces? nil))
+           (if (char= c #\newline) (setf newlines? t) (setf newlines? nil)))
+      'string))))
 
 (defun to-printable-string (arg)
   (clean-string (write-to-string arg)))
@@ -118,8 +121,31 @@ Prints all slots with format 'SLOT-NAME: SLOT-VALUE'"))
                                       (char= c #\>)) #\space)
                                  (t c)))
                      'string)))
-    (write-to-string (read-from-string (%sharp-replace (to-printable-string thing))))))
+    (write-to-string
+     (read-from-string (%sharp-replace (to-printable-string thing))))))
+
+;;
 
 (defun string+ (&rest strings)
-  (format nil "~{~A~}" strings))
+  (with-output-to-string (s)
+    (dolist (str strings)
+      (loop
+         :for ch :across str
+         :do (format s "~C" ch)))))
 
+(defun cons-if-truthy (obj list)
+  (if obj (cons obj list) list))
+
+(defun fit-into (string width &key (with-char #\space) (cut? t) (widen? t))
+  (let ((len (length string)))
+    (cond ((> len width)
+           (if cut?
+               (subseq string 0 width)
+               string))
+          ((< len width)
+           (if widen?
+               (concatenate 'string string
+                            (make-string (- width len)
+                                         :initial-element with-char))
+               string))
+          (t string))))
