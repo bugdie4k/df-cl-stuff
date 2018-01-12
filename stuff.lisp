@@ -39,15 +39,18 @@ and type as third."
                   direct-slots)))))
 
 (defmacro mv-let* (mv-let-list &body body)
-  "(mv-let* (((v v v) form)
-             ((v v) form))
-      body)"
-  (labels ((%expand-mv-let* (mv-let-list)
+  "(mv-let* ((v form)
+             ((v v v) form))
+      body)"  
+  (labels ((%vars (vars) (if (listp vars) vars (list vars)))
+           (%expand-mv-let* (mv-let-list)
              (let ((mv-let1 (pop mv-let-list)))
                (if mv-let-list
-                   `(multiple-value-bind ,(first mv-let1) ,(second mv-let1)
+                   `(multiple-value-bind ,(%vars (first mv-let1))
+                        ,(second mv-let1)
                       ,(%expand-mv-let* mv-let-list))
-                   `(multiple-value-bind ,(first mv-let1) ,(second mv-let1)
+                   `(multiple-value-bind ,(%vars (first mv-let1))
+                        ,(second mv-let1)
                      ,@body)))))
     (%expand-mv-let* mv-let-list)))
 
